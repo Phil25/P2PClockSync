@@ -52,7 +52,7 @@ running(true){
 			clientThread.detach();
 		}
 	});
-	thr_accept.join();
+	thr_accept.detach();
 }
 
 tcpServer::~tcpServer(){
