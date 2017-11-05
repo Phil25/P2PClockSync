@@ -22,9 +22,11 @@ unsigned int ms = 0;
 std::string address = "", initIp = "";
 int initPort = 0;
 std::vector<agentData> agents;
+bool showCounter = false;
 
 void processUserCommand(std::string);
 void sleep(unsigned int);
+void updateClock();
 int getCommunicateId(std::string);
 int getAgentOfAddress(std::string, int);
 void split(const std::string&, char, std::vector<std::string>&);
@@ -35,6 +37,17 @@ void counter(){
 	while(1){
 		sleep(1);
 		ms++;
+	}
+}
+
+void showCounterThread(){
+	double t = 0.0;
+	while(1){
+		sleep(10);
+		if(!showCounter)
+			continue;
+		t = ms /1000.0;
+		std::cout << t << std::endl;
 	}
 }
 
@@ -53,6 +66,15 @@ std::string processRequest(std::string data){
 				os << agents[i].ip << ":" << agents[i].port << (i == len -1 ? "" : ";");
 			return os.str();
 		}
+
+		case SYN:
+			for(unsigned long i = 0; i < agents.size(); i++){
+				tcpClient agent(agents[i].ip, agents[i].port);
+				agent.send("CLK");
+				agents[i].clock = stoi(agent.recv());
+			}
+			updateClock();
+			break;
 
 		case ADR:
 			addAddress(data);
@@ -78,12 +100,8 @@ void processResponse(std::string ip, int port, std::string data, int type){
 				break;
 			std::vector<std::string> arr;
 			split(data, ';', arr);
-			for(unsigned long i = 0; i < arr.size(); i++){
+			for(unsigned long i = 0; i < arr.size(); i++)
 				addAddress(arr[i]);
-				int last = agents.size() -1;
-				tcpClient client(agents[last].ip, agents[last].port);
-				client.send(address);
-			}
 		}
 	}
 }
@@ -113,13 +131,42 @@ int main(int argc, char *argv[]){
 	std::cout << "Counter thread initialized: " << thr_counter.get_id() << std::endl;
 	thr_counter.detach();
 
-	// Initialize early agent interaction
+	// Create toggleable counter display thread
+	std::thread thr_counterShow(showCounterThread);
+	thr_counterShow.detach();
+
+	// Initialize new agent interaction
 	if(initPort != 0){
 		addAddress(initIp, initPort);
-		tcpClient client(initIp, initPort);
-		client.send("NET");
-		processResponse(initIp, initPort, client.recv(), NET);
-		client.send(address);
+
+		{
+			// 1. Download list of addresses of all agents
+			tcpClient initAgent(initIp, initPort);
+			initAgent.send("NET");
+			processResponse(initIp, initPort, initAgent.recv(), NET);
+		}
+
+		for(unsigned long i = 0; i < agents.size(); i++){
+			tcpClient agent(agents[i].ip, agents[i].port);
+
+			// 2. Send own address to all agents
+			agent.send(address);
+			sleep(10);
+
+			// 3. Download clocks of other agents
+			agent.send("CLK");
+			agents[i].clock = stoi(agent.recv());
+		}
+
+		// 3. Update this agent's counter
+		updateClock();
+		std::cout << "Updated clocks." << std::endl;
+
+		// 4. Send SYN to all other agents
+		for(unsigned long i = 0; i < agents.size(); i++){
+			tcpClient agent(agents[i].ip, agents[i].port);
+			agent.send("SYN");
+		}
 	}
 
 	// Set up TCP listen server
@@ -159,6 +206,16 @@ void processUserCommand(std::string cmd){
 	else if(cmd == "addr" || cmd == "address")
 		os << "Current address: " << address << std::endl;
 
+	else if(cmd == "start"){
+		os << "Starting counter display thread." << std::endl;
+		showCounter = true;
+	}
+
+	else if(cmd == "stop"){
+		os << "Stopping counter display thread." << std::endl;
+		showCounter = false;
+	}
+
 	if(os.str().size() == 0)
 		std::cout << "Unknown command." << std::endl;
 	else
@@ -167,6 +224,15 @@ void processUserCommand(std::string cmd){
 
 void sleep(unsigned int x){
 	std::this_thread::sleep_for(std::chrono::milliseconds(x));
+}
+
+void updateClock(){
+	unsigned long i = 0;
+	unsigned int clocks = 0;
+	for(; i < agents.size(); i++) 
+		clocks += agents[i].clock;
+	std::cout << "Updating " << ms << " to " << (clocks /i) << std::endl;
+	ms = clocks /i;
 }
 
 int getCommunicateId(std::string data){

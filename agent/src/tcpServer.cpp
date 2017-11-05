@@ -7,6 +7,8 @@
 
 #include "../include/tcpServer.h"
 
+//#define DEBUG
+
 tcpServer::tcpServer(std::string ip, int port, std::string (*callback_ptr)(std::string)):
 callback_ptr(callback_ptr),
 running(true){
@@ -32,11 +34,15 @@ running(true){
 		return;
 	}
 
+#ifdef DEBUG
 	std::cout << "Server established on: " << inet_ntoa(addr.sin_addr) << ":" << ntohs(addr.sin_port) << std::endl;
+#endif
 
 	std::thread thr_accept([&](){
 		while(running){
+#ifdef DEBUG
 			std::cout << "Waiting for a client..." << std::endl;
+#endif
 			struct sockaddr_in clientAddr;
 			socklen_t clientLen = sizeof(clientAddr);
 
@@ -46,7 +52,9 @@ running(true){
 				return;
 			}
 
+#ifdef DEBUG
 			std::cout << "Accepted client: " << client << std::endl;
+#endif
 			clientfd.push_back(client);
 			std::thread clientThread(&tcpServer::listenToClient, this, client);
 			clientThread.detach();
@@ -67,7 +75,9 @@ void tcpServer::listenToClient(int clientSock){
 	while(1){
 		bytes = recv(clientSock, msg, 1024, 0);
 		if(bytes == 0){
+#ifdef DEBUG
 			std::cout << "Client " << clientSock << " disconnected." << std::endl;
+#endif
 			close(clientSock);
 			break;
 		}

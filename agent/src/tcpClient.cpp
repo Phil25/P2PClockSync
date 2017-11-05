@@ -9,14 +9,18 @@
 
 #include "../include/tcpClient.h"
 
+//#define DEBUG
+
 tcpClient::tcpClient(std::string ip, int port) : ip(ip), port(port), connected(false){
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(sock < 0){
-		std::cout << "Error creating socket. (" << sock << ")" << std::endl;
+		std::cerr << "Error creating socket. (" << sock << ")" << std::endl;
 		return;
 	}
 
+#ifdef DEBUG
 	std::cout << "Socket created." << std::endl;
+#endif
 	if(port == 0)
 		return;
 
@@ -26,11 +30,15 @@ tcpClient::tcpClient(std::string ip, int port) : ip(ip), port(port), connected(f
 	serv.sin_addr.s_addr	= inet_addr(ip.c_str());
 	serv.sin_port			= htons(port);
 
+#ifdef DEBUG
 	std::cout << "Connecting to " << ip << ":" << port << "..." << std::endl;
+#endif
 	if(connect(sock, (sockaddr *)&serv, sizeof(serv)) >= 0)
 		connected = true;
 
+#ifdef DEBUG
 	std::cout << "Connection " << (connected ? "" : "not ") << "established." << std::endl;
+#endif
 }
 
 tcpClient::~tcpClient(){
@@ -39,13 +47,13 @@ tcpClient::~tcpClient(){
 
 bool tcpClient::send(std::string data){
 	if(!connected){
-		std::cout << "Connection has not been established." << std::endl;
+		std::cerr << "Connection has not been established." << std::endl;
 		return false;
 	}
 
 	size_t len = data.size();
 	if(len < 1){
-		std::cout << "Message is empty." << std::endl;
+		std::cerr << "Message is empty." << std::endl;
 		return false;
 	}
 
