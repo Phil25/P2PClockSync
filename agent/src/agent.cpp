@@ -83,29 +83,6 @@ std::string processRequest(std::string data){
 	return "";
 }
 
-void processResponse(std::string ip, int port, std::string data, int type){
-	switch(type){
-		case CLK:{
-			unsigned int otherClock = stoi(data);
-			if(otherClock == 0)
-				break;
-			int agent = getAgentOfAddress(ip, port);
-			if(agent != -1)
-				agents[agent].clock = otherClock;
-			break;
-		}
-
-		case NET:{
-			if(data.size() < 7)
-				break;
-			std::vector<std::string> arr;
-			split(data, ';', arr);
-			for(unsigned long i = 0; i < arr.size(); i++)
-				addAddress(arr[i]);
-		}
-	}
-}
-
 int main(int argc, char *argv[]){
 	if(argc < 3){
 		std::cerr << "Plase provide counter value and port number as arguments." << std::endl;
@@ -143,7 +120,13 @@ int main(int argc, char *argv[]){
 			// 1. Download list of addresses of all agents
 			tcpClient initAgent(initIp, initPort);
 			initAgent.send("NET");
-			processResponse(initIp, initPort, initAgent.recv(), NET);
+			std::string data = initAgent.recv();
+			if(data.size() > 7){
+				std::vector<std::string> arr;
+				split(data, ';', arr);
+				for(unsigned long i = 0; i < arr.size(); i++)
+					addAddress(arr[i]);
+			}
 		}
 
 		for(unsigned long i = 0; i < agents.size(); i++){
