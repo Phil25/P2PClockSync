@@ -1,5 +1,4 @@
 #!/bin/bash
 
-rm bin/agent
 ./compile.sh
-./bin/agent "$@"
+java -cp bin main.Agent 0 2222
