@@ -1,5 +1,5 @@
 #!/bin/bash
 
 cd src/main/
-javac `ls` -d ../../bin/
+javac TCPServer.java Agent.java -d ../../bin/
 cd -
