@@ -11,24 +11,17 @@ import java.net.*;
 public class TCPServer{
 
 	private ServerSocket sock;
+	private boolean running = true;
 
 	public TCPServer(int port, Function<String, String> func){
 		try{
 		sock = new ServerSocket(port);
 		Runnable listener = () -> {
 			try{
-			while(true){
-				Socket conn = sock.accept();
-				BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-				String response = func.apply(in.readLine());
-				if(response != null){
-					PrintWriter out = new PrintWriter(conn.getOutputStream());
-					out.println(response);
-					out.close();
+				while(running){
+					Socket conn = sock.accept();
+					new ListenThread(conn, func).start();
 				}
-				in.close();
-				conn.close();
-			}
 			}catch(IOException e){
 				System.err.println(e);
 			}
@@ -38,6 +31,10 @@ public class TCPServer{
 			System.err.println("Error creating socket: " + e.getCause());
 			return;
 		}
+	}
+
+	public void detach(){
+		running = false;
 	}
 
 	@Override

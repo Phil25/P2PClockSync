@@ -3,7 +3,7 @@
 rm -r bin/*
 ./compile.sh
 if [ -d bin/main ]; then
-	java -cp bin main.Agent 0 2222
+	java -cp bin main.Agent "$@"
 else
 	echo "Compilation error!"
 fi

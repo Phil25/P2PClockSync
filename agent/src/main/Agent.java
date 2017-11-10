@@ -9,17 +9,21 @@ class AgentData{
 	public String ip;
 	public int port;
 	public long clock;
-	public Socket socket;
+	public TCPClient client;
 
 	public AgentData(String ip, int port, long clock){
 		this(ip, port, clock, null);
 	}
 
-	public AgentData(String ip, int port, long clock, Socket socket){
+	public AgentData(String ip, int port, long clock, TCPClient client){
 		this.ip = ip;
 		this.port = port;
 		this.clock = clock;
-		this.socket = socket;
+		this.client = client;
+	}
+
+	public String send(String msg){
+		return this.client == null ? null : this.client.send(msg);
 	}
 
 	public boolean compare(AgentData other){
@@ -30,11 +34,6 @@ class AgentData{
 }
 
 public class Agent{
-
-	private static final int CLK = 0;	// clock
-	private static final int NET = 1;	// request agents' addresses
-	private static final int SYN = 2;	// call for synchronization
-	private static final int ADR = 3;	// address to be added/removed
 
 	private static AgentData thisData;
 	private static ArrayList<AgentData> data;
@@ -47,43 +46,73 @@ public class Agent{
 
 		thisData = new AgentData("127.0.0.1", Integer.parseInt(args[1]), Integer.parseInt(args[0]));
 		data = new ArrayList<AgentData>();
-		if(args.length > 3) // Initialization agent's address specified
-			setupSubAgent(args[2], Integer.parseInt(args[3]));
-		else addAddress(thisData.ip, thisData.port);
 
 		TCPServer server = new TCPServer(thisData.port, (msg) -> processRequest(msg));
 		System.out.println("Server on " + server + " initialized!");
+
+		if(args.length > 3) // Initialization agent's address specified
+			setupSubAgent(args[2], Integer.parseInt(args[3]));
+		else data.add(new AgentData(thisData.ip, thisData.port, 0));
 	}
 
-	private static void setupSubAgent(String ip, int port){
-		if(port == 0){
+	private static void setupSubAgent(String initIp, int initPort){
+		if(initPort == 0){
 			System.err.println("Initial agent address is incorrect.");
 			return;
 		}
-		addAddress(ip, port);
+		addAddress(initIp, initPort);
+		addAddress(data.get(0).send("NET"));
+		String thisAddress = thisData.ip + ':' + thisData.port;
+		for(int i = 0; i < data.size(); i++)
+			data.get(i).send(thisAddress);
 	}
 
 	private static String processRequest(String msg){
-		return "pong: " + msg;
+		String result = null;
+		switch(msg){
+			case "CLK": // request agents' clock
+				result = "" + thisData.clock;
+				break;
+
+			case "NET":	// request agents' addresses
+				String list = "";
+				int len = data.size();
+				for(int i = 1; i < len; i++)
+					list = list + data.get(i).ip + ':' + data.get(i).port + (i == len -1 ? "" : ';');
+				result = list;
+				break;
+
+			case "SYN":	// call for synchronization
+				System.out.println("TODO: SYN");
+				break;
+
+			default:	// address to be added/removed
+				String[] split = msg.split(":");
+				if(split.length > 1)
+					addAddress(split[0], Integer.parseInt(split[1]));
+				break;
+		}
+		return result == null ? null : result.length() > 0 ? result : null;
 	}
 
 	private static void addAddress(String ip, int port){
 		for(int i = 0; i < data.size(); i++)
 			if(data.get(i).ip == ip && data.get(i).port == port)
 				return;
-		data.add(new AgentData(ip, port, 0, getSocket(ip, port)));
+		data.add(new AgentData(ip, port, 0, new TCPClient(ip, port)));
+		System.out.println("Added address: " + ip + ':' + port);
 	}
 
-	private static Socket getSocket(String ip, int port){
-		try{
-			Socket socket = new Socket(ip, port);
-			return socket;
-		}catch(UnknownHostException e){
-			System.err.println("Unknown host: " + ip + ":" + port);
-		}catch(IOException e){
-			System.err.println("Error connecting to " + ip + ":" + port);
+	private static void addAddress(String list){
+		if(list == null || list.length() == 0)
+			return;
+		String[] addresses = list.split(";");
+		String[] split = null;
+		for(int i = 0; i < addresses.length; i++){
+			split = addresses[i].split(":");
+			if(split.length > 1)
+				addAddress(split[0], Integer.parseInt(split[1]));
 		}
-		return null;
 	}
 
 }
