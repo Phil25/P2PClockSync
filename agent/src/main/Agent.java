@@ -1,16 +1,25 @@
 package main;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 class AgentData{
 	public String ip;
 	public int port;
 	public long clock;
+	public Socket socket;
 
 	public AgentData(String ip, int port, long clock){
+		this(ip, port, clock, null);
+	}
+
+	public AgentData(String ip, int port, long clock, Socket socket){
 		this.ip = ip;
 		this.port = port;
 		this.clock = clock;
+		this.socket = socket;
 	}
 
 	public boolean compare(AgentData other){
@@ -62,7 +71,19 @@ public class Agent{
 		for(int i = 0; i < data.size(); i++)
 			if(data.get(i).ip == ip && data.get(i).port == port)
 				return;
-		data.add(new AgentData(ip, port, 0));
+		data.add(new AgentData(ip, port, 0, getSocket(ip, port)));
+	}
+
+	private static Socket getSocket(String ip, int port){
+		try{
+			Socket socket = new Socket(ip, port);
+			return socket;
+		}catch(UnknownHostException e){
+			System.err.println("Unknown host: " + ip + ":" + port);
+		}catch(IOException e){
+			System.err.println("Error connecting to " + ip + ":" + port);
+		}
+		return null;
 	}
 
 }
