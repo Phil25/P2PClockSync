@@ -32,11 +32,9 @@ public class TCPClient implements Closeable{
 		if(!valid)
 			return null;
 		out.println(msg);
-		System.out.println("SENT: " + msg);
 		String result = null;
 		try{
 			result = in.readLine();
-		System.out.println("GOT: " + result);
 		}catch(IOException e){
 			System.err.println("Reading response failed: " + e.getCause());
 		}

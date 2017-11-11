@@ -26,12 +26,6 @@ class AgentData{
 	public String send(String msg){
 		return this.client == null ? null : this.client.send(msg);
 	}
-
-	public boolean compare(AgentData other){
-		return
-			this.ip == other.ip &&
-			this.port == other.port;
-	}
 }
 
 public class Agent{
@@ -46,16 +40,32 @@ public class Agent{
 			return;
 		}
 
-		thisData = new AgentData("127.0.0.1", Integer.parseInt(args[1]), Integer.parseInt(args[0]));
+		thisData = new AgentData("localhost", Integer.parseInt(args[1]), Integer.parseInt(args[0]));
 		data = new ArrayList<AgentData>();
 
+		initCounterThread();
+		initShowCounterThread();
+		captureShutdown();
+		createTcpServer();
+
+		if(args.length > 3)
+			setupSubAgent(args[2], Integer.parseInt(args[3]));
+
+		handleUserCommands(); // blocks thread
+
+		System.exit(0);
+	}
+
+	private static void initCounterThread(){
 		new Thread(() -> {
 			while(true){
 				thisData.clock++;
 				sleep(1);
 			}
 		}).start();
+	}
 
+	private static void initShowCounterThread(){
 		new Thread(() -> {
 			double time = 0.0;
 			while(true){
@@ -66,23 +76,19 @@ public class Agent{
 				System.out.printf("%.3f\n", time);
 			}
 		}).start();
+	}
 
+	private static void captureShutdown(){
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			String thisAddress = thisData.ip + ':' + thisData.port;
+			for(int i = 0; i < data.size(); i++)
+				data.get(i).send(thisAddress);
+		}));
+	}
+
+	private static void createTcpServer(){
 		TCPServer server = new TCPServer(thisData.port, (msg) -> processRequest(msg));
 		System.out.println("Server on " + server + " initialized!");
-
-		if(args.length > 3) // Initialization agent's address specified
-			setupSubAgent(args[2], Integer.parseInt(args[3]));
-
-		Scanner in = new Scanner(System.in);
-		String cmd = null;
-		while(true){
-			cmd = in.nextLine();
-			if(cmd == "exit" || cmd == "quit")
-				break;
-			System.out.print(processCommand(cmd));
-		}
-
-		System.exit(0);
 	}
 
 	private static void setupSubAgent(String initIp, int initPort){
@@ -100,19 +106,29 @@ public class Agent{
 		for(int i = 0; i < data.size(); i++){
 
 			// 2. Send own address to all agents
-			String buffer = data.get(i).send(thisAddress);
-			System.out.println("Buffer: " + buffer);
+			data.get(i).send(thisAddress);
 
-			// 3. Download clocks of other agents
+			// 3. (1)Download clocks of other agents
 			data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
 		}
 
-		// 3. Update this agent's clock
+		// 3. (2)Update this agent's clock
 		updateClock();
 
 		// 4. Send SYN to all other agents
 		for(int i = 0; i < data.size(); i++)
 			data.get(i).send("SYN");
+	}
+
+	private static void handleUserCommands(){
+		Scanner in = new Scanner(System.in);
+		String cmd = null;
+		while(true){
+			cmd = in.nextLine();
+			if(cmd.compareToIgnoreCase("exit") == 0 || cmd.compareToIgnoreCase("quit") == 0)
+				break;
+			System.out.print(processCommand(cmd));
+		}
 	}
 
 	private static String processRequest(String msg){
@@ -169,16 +185,23 @@ public class Agent{
 				else for(int i = 0; i < len; i++)
 					result += data.get(i).ip + ':' + data.get(i).port + " -- " + data.get(i).clock + "ms\n";
 				break;
+
+			case "clock":
+				result = "Current clock: " + thisData.clock;
+				break;
 		}
 		return result == null ? ("Unknown command: " + cmd + "\n") : result;
 	}
 
 	private static void addAddress(String ip, int port){
-		for(int i = 0; i < data.size(); i++)
-			if(data.get(i).ip == ip && data.get(i).port == port)
-				return;
-		data.add(new AgentData(ip, port, 0, new TCPClient(ip, port)));
-		System.out.println("Added address: " + ip + ':' + port);
+		int i = 0, len = data.size();
+		for(; i < len; i++)
+			if(data.get(i).ip.compareTo(ip) == 0 && data.get(i).port == port)
+				break;
+		if(i == len)
+			data.add(new AgentData(ip, port, 0, new TCPClient(ip, port)));
+		else data.remove(i);
+		System.out.println((i == len ? "Added" : "Removed") + " address: " + ip + ':' + port);
 	}
 
 	private static void addAddress(String list){
@@ -194,12 +217,13 @@ public class Agent{
 	}
 
 	private static void updateClock(){
+		//TODO: Including own clock?
 		int i = 0;
 		long clocks = 0;
 		for(; i < data.size(); i++)
 			clocks += data.get(i).clock;
 		clocks /= i;
-		System.out.println("Updating " + thisData.clock + " to " + clocks + ".");
+		System.out.println("Updating clock from " + thisData.clock + "ms to " + clocks + "ms.");
 		thisData.clock = clocks;
 	}
 

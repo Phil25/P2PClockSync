@@ -35,9 +35,7 @@ public class ListenThread extends Thread{
 					socket.close();
 					return;
 				}else{
-					System.out.println("INCOMING: " + line);
 					String result = func.apply(line);
-					System.out.println("RESPONSE: " + result);
 					out.write(result);
 					out.newLine();
 					out.flush();
