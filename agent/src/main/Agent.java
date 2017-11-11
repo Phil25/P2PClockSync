@@ -52,7 +52,6 @@ public class Agent{
 
 		if(args.length > 3) // Initialization agent's address specified
 			setupSubAgent(args[2], Integer.parseInt(args[3]));
-		else data.add(new AgentData(thisData.ip, thisData.port, 0));
 	}
 
 	private static void setupSubAgent(String initIp, int initPort){
@@ -61,10 +60,27 @@ public class Agent{
 			return;
 		}
 		addAddress(initIp, initPort);
+
+		// 1. Download list of addresses of all agents
 		addAddress(data.get(0).send("NET"));
+
 		String thisAddress = thisData.ip + ':' + thisData.port;
-		for(int i = 0; i < data.size(); i++)
-			data.get(i).send(thisAddress);
+		String otherClock = null;
+		for(int i = 0; i < data.size(); i++){
+
+			// 2. Send own address to all agents
+			String buffer = data.get(i).send(thisAddress);
+
+			// 3. Download clocks of other agents
+			data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
+		}
+
+		// 3. Update this agent's clock
+		updateClock();
+
+		// 4. Send SYN to all other agents
+		//for(int i = 0; i < data.size(); i++)
+		//	data.get(i).send("SYN");
 	}
 
 	private static String processRequest(String msg){
@@ -77,13 +93,19 @@ public class Agent{
 			case "NET":	// request agents' addresses
 				String list = "";
 				int len = data.size();
-				for(int i = 1; i < len; i++)
+				for(int i = 0; i < len; i++)
 					list = list + data.get(i).ip + ':' + data.get(i).port + (i == len -1 ? "" : ';');
 				result = list;
 				break;
 
 			case "SYN":	// call for synchronization
-				System.out.println("TODO: SYN");
+				String otherClock = null;
+				for(int i = 0; i < data.size(); i++){
+					otherClock = data.get(i).send("CLK");
+					if(otherClock != null)
+						data.get(i).clock = Integer.parseInt(otherClock);
+				}
+				updateClock();
 				break;
 
 			default:	// address to be added/removed
@@ -92,7 +114,9 @@ public class Agent{
 					addAddress(split[0], Integer.parseInt(split[1]));
 				break;
 		}
-		return result == null ? null : result.length() > 0 ? result : null;
+		result = result == null ? null : result.length() > 0 ? result : null;
+		System.out.println("Replying to " + msg + " with \"" + result + "\"");
+		return result;
 	}
 
 	private static void addAddress(String ip, int port){
@@ -113,6 +137,22 @@ public class Agent{
 			if(split.length > 1)
 				addAddress(split[0], Integer.parseInt(split[1]));
 		}
+	}
+
+	private static void updateClock(){
+		int i = 0;
+		long clocks = 0;
+		for(; i < data.size(); i++)
+			clocks += data.get(i).clock;
+		clocks /= i;
+		System.out.println("Updating " + thisData.clock + " to " + clocks + ".");
+		thisData.clock = clocks;
+	}
+
+	private static void sleep(long x){
+		try{
+			Thread.sleep(x);
+		}catch(InterruptedException e){}
 	}
 
 }
