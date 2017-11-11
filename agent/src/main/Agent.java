@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 class AgentData{
 	public String ip;
@@ -37,6 +38,7 @@ public class Agent{
 
 	private static AgentData thisData;
 	private static ArrayList<AgentData> data;
+	private static boolean showCounter = false;
 
 	public static void main(String[] args){
 		if(args.length < 2){
@@ -47,11 +49,40 @@ public class Agent{
 		thisData = new AgentData("127.0.0.1", Integer.parseInt(args[1]), Integer.parseInt(args[0]));
 		data = new ArrayList<AgentData>();
 
+		new Thread(() -> {
+			while(true){
+				thisData.clock++;
+				sleep(1);
+			}
+		}).start();
+
+		new Thread(() -> {
+			double time = 0.0;
+			while(true){
+				sleep(10);
+				if(!showCounter)
+					continue;
+				time = thisData.clock /1000.0;
+				System.out.printf("%.3f\n", time);
+			}
+		}).start();
+
 		TCPServer server = new TCPServer(thisData.port, (msg) -> processRequest(msg));
 		System.out.println("Server on " + server + " initialized!");
 
 		if(args.length > 3) // Initialization agent's address specified
 			setupSubAgent(args[2], Integer.parseInt(args[3]));
+
+		Scanner in = new Scanner(System.in);
+		String cmd = null;
+		while(true){
+			cmd = in.nextLine();
+			if(cmd == "exit" || cmd == "quit")
+				break;
+			System.out.print(processCommand(cmd));
+		}
+
+		System.exit(0);
 	}
 
 	private static void setupSubAgent(String initIp, int initPort){
@@ -70,6 +101,7 @@ public class Agent{
 
 			// 2. Send own address to all agents
 			String buffer = data.get(i).send(thisAddress);
+			System.out.println("Buffer: " + buffer);
 
 			// 3. Download clocks of other agents
 			data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
@@ -79,8 +111,8 @@ public class Agent{
 		updateClock();
 
 		// 4. Send SYN to all other agents
-		//for(int i = 0; i < data.size(); i++)
-		//	data.get(i).send("SYN");
+		for(int i = 0; i < data.size(); i++)
+			data.get(i).send("SYN");
 	}
 
 	private static String processRequest(String msg){
@@ -114,9 +146,31 @@ public class Agent{
 					addAddress(split[0], Integer.parseInt(split[1]));
 				break;
 		}
-		result = result == null ? null : result.length() > 0 ? result : null;
-		System.out.println("Replying to " + msg + " with \"" + result + "\"");
-		return result;
+		return result == null ? "" : result;
+	}
+
+	private static String processCommand(String cmd){
+		String result = null;
+		switch(cmd){
+			case "show":
+				showCounter = true;
+				result = "Showing counter.\n";
+				break;
+
+			case "hide":
+				showCounter = false;
+				result = "Hiding counter.\n";
+				break;
+
+			case "list":
+				int len = data.size();
+				if(len == 0)
+					result = "No agents reported.\n";
+				else for(int i = 0; i < len; i++)
+					result += data.get(i).ip + ':' + data.get(i).port + " -- " + data.get(i).clock + "ms\n";
+				break;
+		}
+		return result == null ? ("Unknown command: " + cmd + "\n") : result;
 	}
 
 	private static void addAddress(String ip, int port){
