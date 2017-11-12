@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
 import p2pclocksync.data.AgentData;
@@ -17,13 +18,15 @@ import p2pclocksync.data.AgentData;
 public class Monitor{
 
 	private static final int PORT = 3000;
+	private static final String REFRESH_HEADER = "<meta http-equiv=\"refresh\" content=\"0; url=http://localhost:" + PORT + "\">";
+
 	private static HttpServer server = null;
 	private static ArrayList<AgentData> data = null;
 
 	public static void main(String[] args){
 		data = new ArrayList<AgentData>();
 		if(createHttpServer())
-			System.out.println("HTTP server running on " + server.getAddress());
+			System.out.println("HTTP server running on localhost:" + PORT);
 		processUserCommands(); // blocking
 	}
 
@@ -40,26 +43,41 @@ public class Monitor{
 		return true;
 	}
 
-	private static void httpHandler(HttpExchange t){
+	private static void httpHandler(HttpExchange he){
 		try{
-			processParams(t.getRequestURI().toString().split("(\\?|\\&)"));
-
-			String response = readFile("./src/p2pclocksync/monitor/index.html");
-			response = response.replaceAll("\\$AGENT_TABLE\\$", buildTable());
-			response = response.replaceAll("\\$PORT\\$", "" + PORT);
-
-			t.sendResponseHeaders(200, response.length());
-			OutputStream os = t.getResponseBody();
+			HashMap<String, String> params = getParams(he.getRequestURI().toString().split("(\\?|\\&)"));
+			String response = processParams(params);
+			he.sendResponseHeaders(200, response.length());
+			OutputStream os = he.getResponseBody();
 			os.write(response.getBytes());
 			os.close();
 		}catch(IOException e){}
 	}
 
-	private static void processParams(String[] params){
+	private static HashMap<String, String> getParams(String[] params){
 		if(params.length < 2)
-			return;
-		for(int i = 1; i < params.length; i++)
-			System.out.println(params[i]);
+			return null;
+		HashMap<String, String> map = new HashMap<String, String>();
+		String[] split = null;
+		for(int i = 1; i < params.length; i++){
+			split = params[i].split("=");
+			map.put(split[0], split[1]);
+			System.out.println("Putting: " + split[0] + ", " + split[1]);
+		}
+		return map;
+	}
+
+	private static String processParams(HashMap<String, String> params){
+		String response = null;
+		if(params != null && params.containsKey("format")){
+			response = readFile("./src/p2pclocksync/monitor/data.json");
+		}else{
+			response = readFile("./src/p2pclocksync/monitor/index.html");
+			response = response.replaceAll("\\$AGENT_TABLE\\$", buildTable());
+			response = response.replaceAll("\\$PORT\\$", "" + PORT);
+			response = response.replaceAll("\\$REFRESH_HEADER\\$", (params != null && params.containsKey("hostname")) ? REFRESH_HEADER : "");
+		}
+		return response;
 	}
 
 	private static String readFile(String path){
