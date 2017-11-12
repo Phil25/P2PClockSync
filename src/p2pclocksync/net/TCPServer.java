@@ -1,9 +1,6 @@
-package main;
+package p2pclocksync.net;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.util.function.Function;
 
 import java.net.*;

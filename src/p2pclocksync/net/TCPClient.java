@@ -1,4 +1,4 @@
-package main;
+package p2pclocksync.net;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
