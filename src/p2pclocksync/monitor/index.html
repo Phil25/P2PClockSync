@@ -1,9 +1,42 @@
+<!DOCTYPE html>
+<html>
 <head>
-	<meta http-equiv="refresh" content="1" />
+
+<meta http-equiv="refresh" content="1; url=http://localhost:$PORT$" />
+<style>
+	table{
+		width:40em;
+	}
+	table, th, td{
+		border: 1px solid black;
+		border-collapse: collapse;
+	}
+	th, td{
+		padding: 5px;
+		text-align: left;
+	}
+	table tr:nth-child(even){
+		background-color: #eee;
+	}
+	table tr:nth-child(odd){
+		background-color: #fff;
+	}
+</style>
+
 </head>
 <body>
-	<center>
-		<h1>Sockets:</h1>
-		$AGENT_TABLE$
-	</center>
+
+<center>
+	<h1>Agents:</h1>
+	$AGENT_TABLE$
+</center>
+
+<form action="/">
+  <input placeholder="Hostname" type="text" name="hostname">
+  <input placeholder="Port" type="text" name="port">
+  <input placeholder="Initial Clock" type="text" name="clock">
+  <input type="submit" value="Submit">
+</form> 
+
 </body>
+</html>
