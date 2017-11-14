@@ -12,14 +12,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import p2pclocksync.net.TCPClient;
 import p2pclocksync.data.AgentData;
+import p2pclocksync.net.TCPClient;
 
 public class Monitor{
 
 	private static final int PORT = 3000;
-	private static final int UPDATE_INTERVAL = 250;
-	private static final String REFRESH_HEADER = "<meta http-equiv=\"refresh\" content=\"0; url=http://localhost:" + PORT + "\">";
+
+	private static String initIp = null;
+	private static int initPort = 0;
 
 	private static HttpServer server = null;
 	private static ArrayList<AgentData> data = null;
@@ -28,7 +29,6 @@ public class Monitor{
 		data = new ArrayList<AgentData>();
 		if(createHttpServer())
 			System.out.println("HTTP server running on localhost:" + PORT);
-		processUserCommands(); // blocking
 	}
 
 	private static boolean createHttpServer(){
@@ -73,8 +73,8 @@ public class Monitor{
 			response = buildTable();
 		}else{
 			response = readFile("./src/p2pclocksync/monitor/index.html");
-			response = response.replaceAll("\\$REFRESH_HEADER\\$", (params != null && params.containsKey("hostname")) ? REFRESH_HEADER : "");
-			response = response.replaceAll("\\$UPDATE_INTERVAL\\$", "" + UPDATE_INTERVAL);
+			if(params != null && params.containsKey("hostname"))
+				newAgent(params);
 		}
 		return response;
 	}
@@ -102,7 +102,7 @@ public class Monitor{
 		int len = data.size();
 		if(len == 0)
 			return "<tr><th>No agents registered.</th><tr>";
-		String table = "<tr><th>Address</th><th>Clock</th></tr>";
+		String table = "<tr><th>Address</th><th>Clock</th>";
 		for(int i = 0; i < len; i++)
 			data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
 		for(int i = 0; i < len; i++)
@@ -110,29 +110,41 @@ public class Monitor{
 		return table;
 	}
 
-	private static void processUserCommands(){
-		Scanner in = new Scanner(System.in);
-		while(true)
-			processCommand(in.nextLine());
+	//private static String getRemoveButton(int i){
+	//	return "<input type=\"button\" value=\"stop\" onclick=\"remAgent(\'" + data.get(i).ip + ':' + data.get(i).port + "\')\"></tr>";
+	//}
+
+	private static void newAgent(HashMap<String, String> params){
+		if(!params.containsKey("port") || !params.containsKey("clock"))
+			return;
+		String hostname = params.get("hostname");
+		int port = Integer.parseInt((String)(params.get("port")));
+		int clock = Integer.parseInt((String)(params.get("clock")));
+		if(!execAgent(port, clock))
+			return;
+		sleep(250); // wait for the agent to set up a server
+		initIp = hostname;
+		initPort = port;
+		data.add(new AgentData(hostname, port, clock, new TCPClient(hostname, port)));
 	}
 
-	private static void processCommand(String cmd){
-		if(cmd == null)
-			return;
-		String[] split = cmd.split(" ");
-		if(split.length < 2)
-			return;
-		String ip = split[0];
-		int port = Integer.parseInt(split[1]);
-		data.add(new AgentData(ip, port, 0, new TCPClient(ip, port)));
-/*		try{
-			Process agent = Runtime.getRuntime().exec("java -cp bin p2pclocksync.agent.Agent 0" + port);
-			if(agent.isAlive())
-				System.out.println("Agent ran");
+	private static boolean execAgent(int port, int clock){
+		try{
+			String launcher = "java -cp bin p2pclocksync.agent.Agent " + clock + " " + port;
+			if(initIp != null)
+				launcher += " " + initIp + " " + initPort;
+			Process agent = Runtime.getRuntime().exec(launcher);
+			return agent.isAlive();
 		}catch(IOException e){
-			System.err.println("Could not launch agent: " + e.getCause());
-			return;
-		}*/
+			System.out.println("Could not initialize agent: " + e.getCause());
+		}
+		return false;
+	}
+
+	private static void sleep(long x){
+		try{
+			Thread.sleep(x);
+		}catch(InterruptedException e){}
 	}
 
 }

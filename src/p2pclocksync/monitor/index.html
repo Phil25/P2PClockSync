@@ -2,8 +2,6 @@
 <html>
 <head>
 
-$REFRESH_HEADER$
-
 <style>
 	table{
 		width:40em;
@@ -33,11 +31,38 @@ $REFRESH_HEADER$
 				dataType: 'text',
 				url: '?table=1',
 				success: function(data){
-					$("#agentTable").html(data);
+					$('#agentTable').html(data);
 				}
 			});
-		}, $UPDATE_INTERVAL$);
+		}, 100)
 	});
+	function resetFields(){
+		$('#hostnameInput').val('');
+		$('#portInput').val('');
+		$('#clockInput').val('');
+	}
+	function addAgent(){
+		var hostname = $('#hostnameInput').val();
+		if(!hostname){
+			return;
+		}
+		var port = $('#portInput').val();
+		if(!port){
+			return;
+		}
+		var clock = $('#clockInput').val();
+		if(!clock){
+			return;
+		}
+		$.ajax({
+			type: 'GET',
+			url: '?hostname=' + hostname + '&port=' + port + '&clock=' + clock
+		});
+		resetFields();
+	}
+	function remAgent(address){
+		console.log("removing: " + address);
+	}
 </script>
 
 </head>
@@ -49,12 +74,10 @@ $REFRESH_HEADER$
 
 	<br />
 
-	<form action="/">
-		<input placeholder="Hostname" type="text" name="hostname">
-		<input placeholder="Port" type="text" name="port">
-		<input placeholder="Initial Clock" type="text" name="clock">
-		<input type="submit" value="Add Agent">
-	</form>
+	<input id="hostnameInput" placeholder="Hostname" type="text" name="hostname">
+	<input id="portInput" placeholder="Port" type="text" name="port">
+	<input id="clockInput" placeholder="Initial Clock" type="text" name="clock">
+	<input type="button" value="Add Agent" onclick="addAgent();" />
 </center>
 
 </body>
