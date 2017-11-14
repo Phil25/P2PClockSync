@@ -30,13 +30,13 @@ $REFRESH_HEADER$
 		setInterval(function(){
 			$.ajax({
 				type: 'GET',
-				dataType: 'JSON',
-				url: '?format=json',
+				dataType: 'text',
+				url: '?table=1',
 				success: function(data){
-					console.log(data);
+					$("#agentTable").html(data);
 				}
 			});
-		}, 1000);
+		}, $UPDATE_INTERVAL$);
 	});
 </script>
 
@@ -45,15 +45,17 @@ $REFRESH_HEADER$
 
 <center>
 	<h1>Agents:</h1>
-	$AGENT_TABLE$
-</center>
+	<table id="agentTable"></table>
 
-<form action="/">
-  <input placeholder="Hostname" type="text" name="hostname">
-  <input placeholder="Port" type="text" name="port">
-  <input placeholder="Initial Clock" type="text" name="clock">
-  <input type="submit" value="Submit">
-</form> 
+	<br />
+
+	<form action="/">
+		<input placeholder="Hostname" type="text" name="hostname">
+		<input placeholder="Port" type="text" name="port">
+		<input placeholder="Initial Clock" type="text" name="clock">
+		<input type="submit" value="Add Agent">
+	</form>
+</center>
 
 </body>
 </html>
