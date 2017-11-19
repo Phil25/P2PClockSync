@@ -1,8 +1,46 @@
 # P2P Clock Synchronization — Project Documentation
-#### A school project to simulate a peer-to-peer network.
+#### School project to synchronize clocks accross a peer-to-peer network.
 
 
 # Contents
+* [Overview](#overview-)
+* [Running](#running-)
+* [Packages](#packages-)
+	* p2pclocksync.agent
+		* [Agent](#p2pclocksync.agent.Agent-)
+	* p2pclocksync.data
+		* [AgentData](#p2pclocksync.data.AgentData-)
+	* p2pclocksync.monitor
+		* [Monitor](#p2pclocksync.monitor.Monitor-)
+		* [index](#p2pclocksync.monitor.index-)
+	* p2pclocksync.net
+		* [ListenThread](#p2pclocksync.net.ListenThread-)
+		* [TCPClient](#p2pclocksync.net.TCPClient-)
+		* [TCPServer](#p2pclocksync.net.TCPServer-)
+
+# Overview [^](#contents)
+This project contains two applications: Agent and Monitor. Agent acts as a node on a P2P network. Every Agent except the inital one should contain address of the initial Agent (passed as 3rd and 4th argument). Upon creation of one, clocks of all Agents are synchronized. Monitor is used to view status of and manage each Agent, added manually to Monitor's list. It is accessed at `localhost:3000`.
+
+# Running [^](#contents)
+#### Agent
+
+From project root: `agent.sh <initial clock> <port> [<init agent hostname> <init agent port>]`
+
+#### Monitor
+
+From project root: `monitor.sh`
+
+Monitor is accessed at `localhost:3000`
+
+# Packages [^](#contents)
+### p2pclocksync.agent.Agent [^](#contents)
+This is the main class of the Agent application. It takes the following parameters:
+* `initial clock` — value of the clock the Agent should begin counting from,
+* `port` —  port the Agent should listen to requests on,
+* `initial agent hostname`\* — hostname of the initial agent to pull data from, and
+* `initial agent port`\* — port of the initial agent to pull data from.
+
+<!--
 * [Agent](#agent-)
 	* [AgentData](#agentdata-)
 	* [TCPClient](#tcpclient-)
@@ -55,4 +93,4 @@ This class manages seperate clients connected to `ServerSocket` from the `TCPSer
 * Agent C, using CLK, downloads from agents A and B their clocks.
 * Agent C updates its clock with the average of downloaded ones.
 * Agent C sends SYN to agents A and B.
-* Both agents A and B download clocks from other agents and update theirs.
+* Both agents A and B download clocks from other agents and update theirs.-->
