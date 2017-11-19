@@ -20,6 +20,6 @@ public class AgentData{
 	}
 
 	public String send(String msg){
-		return this.client == null ? null : this.client.send(msg);
+		return client == null ? null : client.send(msg);
 	}
 }

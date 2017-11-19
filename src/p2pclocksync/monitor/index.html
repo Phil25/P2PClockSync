@@ -20,6 +20,11 @@
 	table tr:nth-child(odd){
 		background-color: #fff;
 	}
+	.options button{
+		width: 100%;
+		cursor: pointer;
+		display: block;
+	}
 </style>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
@@ -30,38 +35,43 @@
 				type: 'GET',
 				dataType: 'text',
 				url: '?table=1',
-				success: function(data){
-					$('#agentTable').html(data);
-				}
+				success: updateAgents
 			});
 		}, 100)
 	});
+	function updateAgents(data){
+		$('#agentTable').html(data);
+	}
 	function resetFields(){
 		$('#hostnameInput').val('');
 		$('#portInput').val('');
-		$('#clockInput').val('');
+		warn('');
 	}
 	function addAgent(){
 		var hostname = $('#hostnameInput').val();
 		if(!hostname){
+			warn('Please specify the hostname.');
 			return;
 		}
 		var port = $('#portInput').val();
 		if(!port){
-			return;
-		}
-		var clock = $('#clockInput').val();
-		if(!clock){
+			warn('Please specify the port.');
 			return;
 		}
 		$.ajax({
 			type: 'GET',
-			url: '?hostname=' + hostname + '&port=' + port + '&clock=' + clock
+			url: '?hostname=' + hostname + '&port=' + port
 		});
 		resetFields();
 	}
-	function remAgent(address){
-		console.log("removing: " + address);
+	function agentOption(option){
+		$.ajax({
+			type: 'GET',
+			url: '?' + option
+		});
+	}
+	function warn(info){
+		$('#warn').html(info);
 	}
 </script>
 
@@ -76,8 +86,11 @@
 
 	<input id="hostnameInput" placeholder="Hostname" type="text" name="hostname">
 	<input id="portInput" placeholder="Port" type="text" name="port">
-	<input id="clockInput" placeholder="Initial Clock" type="text" name="clock">
 	<input type="button" value="Add Agent" onclick="addAgent();" />
+
+	<br />
+
+	<div id="warn"></div>
 </center>
 
 </body>

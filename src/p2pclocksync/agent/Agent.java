@@ -138,6 +138,10 @@ public class Agent{
 				updateClock();
 				break;
 
+			case "STP":
+				System.exit(0);
+				break;
+
 			default:	// address to be added/removed
 				String[] split = msg.split(":");
 				if(split.length > 1)
@@ -199,12 +203,11 @@ public class Agent{
 	}
 
 	private static void updateClock(){
-		//TODO: Including own clock?
 		int i = 0;
-		long clocks = 0;
+		long clocks = thisData.clock;
 		for(; i < data.size(); i++)
 			clocks += data.get(i).clock;
-		clocks /= i;
+		clocks /= i +1;
 		System.out.println("Updating clock from " + thisData.clock + "ms to " + clocks + "ms.");
 		thisData.clock = clocks;
 	}

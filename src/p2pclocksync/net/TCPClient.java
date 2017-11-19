@@ -11,11 +11,23 @@ import java.net.UnknownHostException;
 public class TCPClient implements Closeable{
 
 	private Socket socket = null;
-	private boolean valid = false;
 	private PrintWriter out = null;
 	private BufferedReader in = null;
 
+	private boolean valid = false;
+	private String hostname;
+	private int port;
+
 	public TCPClient(String hostname, int port){
+		valid = false;
+		this.hostname = hostname;
+		this.port = port;
+		connect();
+		if(!valid)
+			retryLoop();
+	}
+
+	private void connect(){
 		try{
 			socket = new Socket(hostname, port);
 			out = new PrintWriter(socket.getOutputStream(), true);
@@ -24,21 +36,40 @@ public class TCPClient implements Closeable{
 		}catch(UnknownHostException e){
 			System.err.println("Unknown host: " + hostname + ':' + port);
 		}catch(IOException e){
-			System.err.println("Error connecting to " + hostname + ':' + port);
+//			System.err.println("Error connecting to " + hostname + ':' + port);
 		}
+	}
+
+	private void retryLoop(){
+		new Thread(() -> {
+			while(!valid){
+				sleep(3000);
+				connect();
+			}
+		}).start();
 	}
 
 	public String send(String msg){
 		if(!valid)
-			return null;
+			return "unconnected";
 		out.println(msg);
 		String result = null;
 		try{
 			result = in.readLine();
 		}catch(IOException e){
-			System.err.println("Reading response failed: " + e.getCause());
+			result = "" + e.getCause();
+		}
+		if(result == null){
+			valid = false;
+			retryLoop();
 		}
 		return result;
+	}
+
+	private void sleep(long x){
+		try{
+			Thread.sleep(x);
+		}catch(InterruptedException e){}
 	}
 
 	@Override
