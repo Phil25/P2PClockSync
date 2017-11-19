@@ -33,64 +33,38 @@ From project root: `monitor.sh`
 Monitor is accessed at `localhost:3000`
 
 # Packages [^](#contents)
-### p2pclocksync.agent.Agent [^](#contents)
+## p2pclocksync.agent.Agent [^](#contents)
 This is the main class of the Agent application. It takes the following parameters:
 * `initial clock` — value of the clock the Agent should begin counting from,
 * `port` —  port the Agent should listen to requests on,
 * `initial agent hostname`\* — hostname of the initial agent to pull data from, and
 * `initial agent port`\* — port of the initial agent to pull data from.
 
-<!--
-* [Agent](#agent-)
-	* [AgentData](#agentdata-)
-	* [TCPClient](#tcpclient-)
-	* [TCPServer](#tcpserver-)
-	* [ListenThread](#listenthread-)
-	* [Example interaction](#example-interaction-)
+Agent contains an array of `AgentData`s, which holds appropriate information to contact other agents.
 
-
-# Agent
-`Agent` is the node of the network. It contains the class `AgentData`, which holds the appropriate information. To contact other agents, it uses custom classes called `TCPClient` and `TCPServer`.
-
-## AgentData
-Agent's own data is stored in an instance of `AgentData` in variable `thisData`. Data of other agents is kept in an instance of `ArrayList<AgentData>` in variable `data`.
-The subclass stores the following information:
+## p2pclocksync.data.AgentData [^](#contents)
+This class stores the following information:
 * `String ip` — hostname of the agent,
 * `int port` — port of the agent,
-* `long clock` — counter in miliseconds,
-* `TCPClient client` — `TCPClient` to allow communication.
+* `long clock` — counter in milliseconds,
+* `TCPClient client` —  TCP client to allow communication.
 
-## TCPClient
-This class provides a mean open a connection and send data to a specific agent via `Socket`. Connection is kept open.
+## p2pclocksync.monitor.Monitor [^](#contents)
+The Monitor class sets up an HTTP server on `localhost:3000`. It is keeping a list of its own of all the agents. To manage them, it processes GET parameters it reads from the URI, sent by client-size script. `index.html` is the default file that's being sent when the parameters are not recognised, otherwise following occurs for the particular parameters:
+* `table=1` — fetches latest clock counts and sents HTML table as a text file,
+* `synchronize=X` — Sends SYN to Agent of the ID `X`,
+* `remove=X` — Removes the Agent of the ID `X`,
+* `stop=X` — Stops the Agent of the ID `X`,
+* `hostname=X&port=Y` — Adds Agent of hostname `X` and port `Y`.
 
-`public TCPClient(String hostname, int port)` — constructor
+## p2pclocksync.monitor.index [^](#contents)
+This HTML file contains all the HTML markup, JavaScript and CSS styles.
 
-`public String send(String msg)` — send `msg` and return the response
+## p2pclocksync.net.ListenThread [^](#contents)
+This class is used by `TCPServer` to set up a threaded listener for all incoming sockets.
 
-`public void close()` — overrides `close()` method from Closeable interface
+## p2pclocksync.net.TCPClient [^](#contents)
+`TCPClient` provides an abstraction to setting up a communication to and contacting a specific Agent.
 
-## TCPServer
-This class provides a mean to listen on certain port for TCP connections via `SocketServer`. The listening and accepting is done on a seperate thread. Moreover, every incoming connection gets assigned a new thread, and managed using the class `ListenThread`.
-
-`public TCPServer(int port, Function<String, String> func)` — constructor, `func` takes the incoming message as parameter and returns a potential response
-
-`public void detach()` — seize accepting connections
-
-`public String toString()` — overrides `toString()` method by displaying the address the socket listens on.
-
-## ListenThread
-This class manages seperate clients connected to `ServerSocket` from the `TCPServer` class.
-
-`public ListenThread(Socket socket, Function<String, String> func)` — constructor, listen to client on `socket` and pass incoming data to `func` as argument; send potential response back to the client
-
-`public void run()` — overrides `run()` method from Thread, allows the listening to run concurrently
-
-## Example interaction
-*Situation*: network has two agents: A and B. Agent A is the introducing agent. Agent C joins the network.
-* Agent C downloads from agent A a list of contacts.
-* Agent C sends its address to agents on the downloaded list.
-* Agent A and B update their contact list with agent C.
-* Agent C, using CLK, downloads from agents A and B their clocks.
-* Agent C updates its clock with the average of downloaded ones.
-* Agent C sends SYN to agents A and B.
-* Both agents A and B download clocks from other agents and update theirs.-->
+## p2pclocksync.net.TCPServer [^](#contents)
+`TCPServer` provides an abstraction to receiving requests on a specified port.
