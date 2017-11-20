@@ -92,6 +92,7 @@ public class Agent{
 
 			// 3. (1)Download clocks of other agents
 			data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
+			System.out.println(i + ". " + data.get(i).clock);
 		}
 
 		// 3. (2)Update this agent's clock
@@ -129,16 +130,14 @@ public class Agent{
 				break;
 
 			case "SYN":	// call for synchronization
-				String otherClock = null;
 				for(int i = 0; i < data.size(); i++){
-					otherClock = data.get(i).send("CLK");
-					if(otherClock != null)
-						data.get(i).clock = Integer.parseInt(otherClock);
+					data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
+					System.out.println(i + ". " + data.get(i).clock);
 				}
 				updateClock();
 				break;
 
-			case "STP":
+			case "END": // end process
 				System.exit(0);
 				break;
 

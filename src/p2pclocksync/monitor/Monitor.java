@@ -70,7 +70,9 @@ public class Monitor{
 		if(params == null){
 			response = readFile("./src/p2pclocksync/monitor/index.html");
 		}else{
-			if(params.containsKey("table")){
+			if(params.containsKey("hostname")){
+				addAgent(params);
+			}else if(params.containsKey("table")){
 				response = buildTable();
 			}else if(params.containsKey("synchronize")){
 				int id = Integer.parseInt((String)params.get("synchronize"));
@@ -78,13 +80,9 @@ public class Monitor{
 			}else if(params.containsKey("remove")){
 				int id = Integer.parseInt((String)params.get("remove"));
 				data.remove(id);
-			}else if(params.containsKey("stop")){
-				int id = Integer.parseInt((String)params.get("stop"));
-				data.get(id).send("STP");
-			}else{
-				response = readFile("./src/p2pclocksync/monitor/index.html");
-				if(params.containsKey("hostname"))
-					addAgent(params);
+			}else if(params.containsKey("end")){
+				int id = Integer.parseInt((String)params.get("end"));
+				data.get(id).send("END");
 			}
 		}
 		return response;
@@ -117,7 +115,7 @@ public class Monitor{
 			String clk = data.get(i).send("CLK");
 			data.get(i).clock = clk.equals("unconnected") ? 0 : Integer.parseInt(clk);
 		}
-		String table = "<tr><td>Address</td><td>Clock</td><td>Options</td></tr>";
+		String table = "<tr><td>Address</td><td>Clock</td><td colspan=2>Options</td></tr>";
 		for(int i = 0; i < len; i++)
 			table
 				+= "<tr><td>"
@@ -125,7 +123,11 @@ public class Monitor{
 				+ "</td><td>"
 				+ formatMs(data.get(i).clock)
 				+ "</td><td>"
-				+ buildButtons(i)
+				+ "<button class=\"optionButton\" onmousedown=\"agentOption('synchronize=" + i + "')\">SYN</button>"
+				+ "</td><td>"
+				+ "<button class=\"optionButton\" onmousedown=\"agentOption('end=" + i + "')\">END</button>"
+				+ "</td><td>"
+				+ "<button class=\"optionButton\" onmousedown=\"agentOption('remove=" + i + "')\">x</button>"
 				+ "</td></tr>";
 		return table;
 	}
@@ -140,14 +142,6 @@ public class Monitor{
 		long min = t %60;
 		long h = (t -min) /60;
 		return String.format("%02d:%02d:%02d.%03d", h, min, sec, ms);
-	}
-
-	private static String buildButtons(int i){
-		return "<div class=\"options\">"
-			+ "<button onmousedown=\"agentOption('synchronize=" + i + "')\">Synchronize</button>"
-			+ "<button onmousedown=\"agentOption('remove=" + i + "')\">Remove from list</button>"
-			+ "<button onmousedown=\"agentOption('stop=" + i + "')\">Stop agent</button>"
-			+ "</div>";
 	}
 
 	private static void addAgent(HashMap<String, String> params){

@@ -54,7 +54,7 @@ The Monitor class sets up an HTTP server on `localhost:3000`. It is keeping a li
 * `table=1` — fetches latest clock counts and sents HTML table as a text file,
 * `synchronize=X` — Sends SYN to Agent of the ID `X`,
 * `remove=X` — Removes the Agent of the ID `X`,
-* `stop=X` — Stops the Agent of the ID `X`,
+* `end=X` — Ends the process of the Agent of the ID `X`,
 * `hostname=X&port=Y` — Adds Agent of hostname `X` and port `Y`.
 
 ## p2pclocksync.monitor.index [^](#contents)
