@@ -13,14 +13,17 @@ public class ListenThread extends Thread{
 	protected Socket socket;
 	private Function<String, String> func;
 
+	private BufferedReader in;
+	private BufferedWriter out;
+
 	public ListenThread(Socket socket, Function<String, String> func){
 		this.socket = socket;
 		this.func = func;
+		this.in = null;
+		this.out = null;
 	}
 
 	public void run(){
-		BufferedReader in = null;
-		BufferedWriter out = null;
 		try{
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -33,17 +36,23 @@ public class ListenThread extends Thread{
 				line = in.readLine();
 				if(line == null){
 					socket.close();
-					return;
+					break;
 				}else{
 					String result = func.apply(line);
-					out.write(result);
-					out.newLine();
-					out.flush();
+					reply(result);
 				}
 			}catch(IOException e){
-				return;
+				break;
 			}
 		}
+	}
+
+	private void reply(String message){
+		try{
+			out.write(message);
+			out.newLine();
+			out.flush();
+		}catch(IOException e){}
 	}
 
 }

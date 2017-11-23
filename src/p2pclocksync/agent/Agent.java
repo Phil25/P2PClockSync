@@ -1,6 +1,7 @@
 package p2pclocksync.agent;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -14,7 +15,6 @@ public class Agent{
 
 	private static AgentData thisData;
 	private static ArrayList<AgentData> data;
-	private static boolean showCounter = false;
 
 	public static void main(String[] args){
 		if(args.length < 2){
@@ -26,7 +26,6 @@ public class Agent{
 		data = new ArrayList<AgentData>();
 
 		initCounterThread();
-		initShowCounterThread();
 		captureShutdown();
 		createTcpServer();
 
@@ -47,19 +46,6 @@ public class Agent{
 		}).start();
 	}
 
-	private static void initShowCounterThread(){
-		new Thread(() -> {
-			double time = 0.0;
-			while(true){
-				sleep(10);
-				if(!showCounter)
-					continue;
-				time = thisData.clock /1000.0;
-				System.out.printf("%.3f\n", time);
-			}
-		}).start();
-	}
-
 	private static void captureShutdown(){
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			String thisAddress = thisData.ip + ':' + thisData.port;
@@ -70,7 +56,8 @@ public class Agent{
 
 	private static void createTcpServer(){
 		TCPServer server = new TCPServer(thisData.port, (msg) -> processRequest(msg));
-		System.out.println("Server on " + server + " initialized!");
+		thisData.ip = server.getHostname();
+		System.out.println("Server on " + thisData.ip + " initialized!");
 	}
 
 	private static void setupSubAgent(String initIp, int initPort){
@@ -92,7 +79,6 @@ public class Agent{
 
 			// 3. (1)Download clocks of other agents
 			data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
-			System.out.println(i + ". " + data.get(i).clock);
 		}
 
 		// 3. (2)Update this agent's clock
@@ -130,10 +116,8 @@ public class Agent{
 				break;
 
 			case "SYN":	// call for synchronization
-				for(int i = 0; i < data.size(); i++){
+				for(int i = 0; i < data.size(); i++)
 					data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
-					System.out.println(i + ". " + data.get(i).clock);
-				}
 				updateClock();
 				break;
 
@@ -153,16 +137,6 @@ public class Agent{
 	private static String processCommand(String cmd){
 		String result = null;
 		switch(cmd){
-			case "show":
-				showCounter = true;
-				result = "Showing counter.\n";
-				break;
-
-			case "hide":
-				showCounter = false;
-				result = "Hiding counter.\n";
-				break;
-
 			case "list":
 				int len = data.size();
 				if(len == 0)

@@ -51,7 +51,7 @@ public class TCPClient implements Closeable{
 
 	public String send(String msg){
 		if(!valid)
-			return "unconnected";
+			return "0";
 		out.println(msg);
 		String result = null;
 		try{

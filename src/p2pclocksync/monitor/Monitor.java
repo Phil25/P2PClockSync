@@ -111,10 +111,8 @@ public class Monitor{
 		int len = data.size();
 		if(len == 0)
 			return "No agents registered.";
-		for(int i = 0; i < len; i++){
-			String clk = data.get(i).send("CLK");
-			data.get(i).clock = clk.equals("unconnected") ? 0 : Integer.parseInt(clk);
-		}
+		for(int i = 0; i < len; i++)
+			data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
 		String table = "<tr><td>Address</td><td>Clock</td><td colspan=2>Options</td></tr>";
 		for(int i = 0; i < len; i++)
 			table
