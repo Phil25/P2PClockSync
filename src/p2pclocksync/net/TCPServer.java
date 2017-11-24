@@ -57,7 +57,7 @@ public class TCPServer{
 				}
 			}
 		}catch(SocketException e){}
-		return "0.0.0.0";
+		return "127.0.0.1";
 	}
 
 	@Override

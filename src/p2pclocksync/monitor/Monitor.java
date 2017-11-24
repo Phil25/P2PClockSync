@@ -16,20 +16,22 @@ import p2pclocksync.net.TCPClient;
 
 public class Monitor{
 
-	private static final int PORT = 3000;
+	private static int port = 3000;
 
 	private static HttpServer server = null;
 	private static ArrayList<AgentData> data = null;
 
 	public static void main(String[] args){
 		data = new ArrayList<AgentData>();
+		if(args.length > 0)
+			port = Integer.parseInt(args[0]);
 		if(createHttpServer())
-			System.out.println("HTTP server running on localhost:" + PORT);
+			System.out.println("HTTP server running on localhost:" + port);
 	}
 
 	private static boolean createHttpServer(){
 		try{
-			server = HttpServer.create(new InetSocketAddress(PORT), 0);
+			server = HttpServer.create(new InetSocketAddress(port), 0);
 		}catch(IOException e){
 			System.err.println("Could not create HTTP server: " + e.getCause());
 			return false;
