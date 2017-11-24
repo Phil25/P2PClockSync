@@ -11,8 +11,8 @@ import java.net.UnknownHostException;
 public class TCPClient implements Closeable{
 
 	private Socket socket = null;
-	private PrintWriter out = null;
 	private BufferedReader in = null;
+	private PrintWriter out = null;
 
 	private boolean valid = false;
 	private String hostname;
@@ -30,8 +30,8 @@ public class TCPClient implements Closeable{
 	private void connect(){
 		try{
 			socket = new Socket(hostname, port);
-			out = new PrintWriter(socket.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			out = new PrintWriter(socket.getOutputStream(), true);
 			valid = true;
 		}catch(UnknownHostException e){
 			System.err.println("Unknown host: " + hostname + ':' + port);
@@ -57,7 +57,7 @@ public class TCPClient implements Closeable{
 		try{
 			result = in.readLine();
 		}catch(IOException e){
-			result = "" + e.getCause();
+			result = e.getCause().toString();
 		}
 		if(result == null){
 			valid = false;

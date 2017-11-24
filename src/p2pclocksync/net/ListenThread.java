@@ -6,17 +6,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 public class ListenThread extends Thread{
 
 	protected Socket socket;
-	private Function<String, String> func;
+	private BiFunction<Socket, String, String> func;
 
 	private BufferedReader in;
 	private BufferedWriter out;
 
-	public ListenThread(Socket socket, Function<String, String> func){
+	public ListenThread(Socket socket, BiFunction<Socket, String, String> func){
 		this.socket = socket;
 		this.func = func;
 		this.in = null;
@@ -38,7 +38,7 @@ public class ListenThread extends Thread{
 					socket.close();
 					break;
 				}else{
-					String result = func.apply(line);
+					String result = func.apply(socket, line);
 					reply(result);
 				}
 			}catch(IOException e){

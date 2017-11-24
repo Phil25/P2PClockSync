@@ -48,16 +48,15 @@ public class Agent{
 
 	private static void captureShutdown(){
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			String thisAddress = thisData.ip + ':' + thisData.port;
+			String thisPort = "" + thisData.port;
 			for(int i = 0; i < data.size(); i++)
-				data.get(i).send(thisAddress);
+				data.get(i).send(thisPort);
 		}));
 	}
 
 	private static void createTcpServer(){
-		TCPServer server = new TCPServer(thisData.port, (msg) -> processRequest(msg));
-		thisData.ip = server.getHostname();
-		System.out.println("Server on " + thisData.ip + " initialized!");
+		TCPServer server = new TCPServer(thisData.port, (sock, msg) -> processRequest(sock, msg));
+		System.out.println("Server on " + thisData.port + " initialized!");
 	}
 
 	private static void setupSubAgent(String initIp, int initPort){
@@ -66,16 +65,14 @@ public class Agent{
 			return;
 		}
 		addAddress(initIp, initPort);
+		String thisPort = "" + thisData.port;
 
 		// 1. Download list of addresses of all agents
 		addAddress(data.get(0).send("NET"));
 
-		String thisAddress = thisData.ip + ':' + thisData.port;
-		String otherClock = null;
 		for(int i = 0; i < data.size(); i++){
-
-			// 2. Send own address to all agents
-			data.get(i).send(thisAddress);
+			// 2. Send own address to all agents (port)
+			data.get(i).send(thisPort);
 
 			// 3. (1)Download clocks of other agents
 			data.get(i).clock = Integer.parseInt(data.get(i).send("CLK"));
@@ -100,7 +97,7 @@ public class Agent{
 		}
 	}
 
-	private static String processRequest(String msg){
+	private static String processRequest(Socket socket, String msg){
 		String result = null;
 		switch(msg){
 			case "CLK": // request agents' clock
@@ -125,10 +122,10 @@ public class Agent{
 				System.exit(0);
 				break;
 
-			default:	// address to be added/removed
-				String[] split = msg.split(":");
-				if(split.length > 1)
-					addAddress(split[0], Integer.parseInt(split[1]));
+			default:	// port to be set
+				String address = socket.getInetAddress().getHostAddress();
+				if(address != null)
+					addAddress(address, Integer.parseInt(msg));
 				break;
 		}
 		return result == null ? "" : result;
@@ -166,6 +163,7 @@ public class Agent{
 	private static void addAddress(String list){
 		if(list == null || list.length() == 0)
 			return;
+		System.out.println(list);
 		String[] addresses = list.split(";");
 		String[] split = null;
 		for(int i = 0; i < addresses.length; i++){

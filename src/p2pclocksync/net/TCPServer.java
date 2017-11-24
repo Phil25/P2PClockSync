@@ -1,8 +1,11 @@
 package p2pclocksync.net;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.Enumeration;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import java.net.*;
 
@@ -10,12 +13,10 @@ public class TCPServer{
 
 	private ServerSocket sock;
 	private boolean running = true;
-	private String hostname = "0.0.0.0";
 
-	public TCPServer(int port, Function<String, String> func){
+	public TCPServer(int port, BiFunction<Socket, String, String> func){
 		try{
 		sock = new ServerSocket(port);
-		this.hostname = findHostname();
 		Runnable listener = () -> {
 			try{
 				while(running){
@@ -35,29 +36,6 @@ public class TCPServer{
 
 	public void detach(){
 		running = false;
-	}
-
-	public String getHostname(){
-		return hostname;
-	}
-
-	private String findHostname(){
-		try{
-			Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-			while(interfaces.hasMoreElements()){
-				NetworkInterface iface = interfaces.nextElement();
-				if(iface.isLoopback() || !iface.isUp())
-					continue;
-
-				Enumeration<InetAddress> addresses = iface.getInetAddresses();
-				while(addresses.hasMoreElements()){
-					InetAddress addr = addresses.nextElement();
-					if(addr instanceof Inet4Address)
-						return addr.getHostAddress();
-				}
-			}
-		}catch(SocketException e){}
-		return "127.0.0.1";
 	}
 
 	@Override
