@@ -26,9 +26,9 @@ This project contains two applications: Agent and Monitor.
 
 Agent acts as a node on a P2P network. Every Agent except the inital one should contain the address of the initial Agent (passed as 3rd and 4th argument). Upon creation of one, clocks of all Agents are synchronized.
 
-Monitor is used to view status of and manage each Agent, added manually to Monitor's list. Port of the monitor is specified as an arugment, otherwise 3000 is assumed. It can be accessed at `localhost:<port>` with the entirety of its functionality.
+Monitor is used to view status of and manage each Agent, added manually to Monitor's list. Port of the Monitor is specified as an argument, otherwise 3000 is assumed. It can be accessed at `localhost:<port>` with the entirety of its functionality.
 
-The Agents will establish their servers on `localhost` in case the host machine doesn't have internet access, otherwise it will try to find the internal IP of an active interface. The monitor, however, uses an external jQuery library which cannot be accessed without an internet connection.
+The Agents will establish their servers on `localhost` in case the host machine doesn't have internet access, otherwise it will try to find the internal IP of an active interface. Monitor, however, uses an external jQuery library which cannot be accessed without an internet connection.
 
 # Running [^](#contents)
 #### Agent
