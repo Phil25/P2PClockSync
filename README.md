@@ -33,12 +33,14 @@ The Agents will establish their servers on `localhost` in case the host machine 
 # Running [^](#contents)
 #### Agent
 
-From project root: `agent.[sh/bat] <initial clock> <port> [<init agent hostname> <init agent port>]`
+From project root: `agent.[sh/bat] <initial clock> <port> [<init agent hostname> <init agent port>]`.
+
 If optional arguments are not specified, the Agent must be the initial Agent.
 
 #### Monitor
 
-From project root: `monitor.[sh/bat] [<port>]`
+From project root: `monitor.[sh/bat] [<port>]`.
+
 If optional arguments are not specified, the port 3000 is assumed.
 
 Monitor can be accessed at `localhost:<port>`
