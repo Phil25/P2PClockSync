@@ -49,8 +49,10 @@ public class Agent{
 	private static void captureShutdown(){
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			String thisPort = "" + thisData.port;
-			for(int i = 0; i < data.size(); i++)
+			for(int i = 0; i < data.size(); i++){
 				data.get(i).send(thisPort);
+				data.get(i).send("SYN");
+			}
 		}));
 	}
 
@@ -163,7 +165,6 @@ public class Agent{
 	private static void addAddress(String list){
 		if(list == null || list.length() == 0)
 			return;
-		System.out.println(list);
 		String[] addresses = list.split(";");
 		String[] split = null;
 		for(int i = 0; i < addresses.length; i++){
