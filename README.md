@@ -9,7 +9,7 @@
 * [Overview](#overview-)
 * [Running](#running-)
 * [Features](#features-)
-* [Packages](#packages-)
+* [Files](#files-)
 	* p2pclocksync.agent
 		* [Agent](#agent-)
 	* p2pclocksync.data
@@ -34,17 +34,21 @@ The Agents will establish their servers on `localhost` in case the host machine 
 # Running [^](#contents)
 #### Agent
 
-From project root: `agent.[sh/bat] <initial clock> <port> [<init agent hostname> <init agent port>]`.
+From project root: `agent.[sh/bat] <initial clock> <port> [<init agent hostname> <init agent port>]`
+
 Example: `./agent.sh 100000 2223 192.168.1.20 2222`
-In case script not working: `java -cp bin p2pclocksync.agent.Agent <args>`
+
+If script not working: `java -cp bin p2pclocksync.agent.Agent <args>`
 
 If optional arguments are not specified, the Agent must be the initial Agent.
 
 #### Monitor
 
-From project root: `monitor.[sh/bat] [<port>]`.
+From project root: `monitor.[sh/bat] [<port>]`
+
 Example: `./monitor.sh 3000`
-In case script not working: `java -cp bin p2pclocksync.monitor.Monitor <args>`
+
+If script not working: `java -cp bin p2pclocksync.monitor.Monitor <args>`
 
 If optional arguments are not specified, the port 3000 is assumed.
 
@@ -71,10 +75,11 @@ What has or hasn't been implemented, plus potential bugs.
 * (+) A client-side script calls the server to build the list and downloads it.
 * (-) Table is built by the server on each call, there is no limit to how often the calls are made.
 * (-) `index.html` file is parsed each time the webpage is opened, instead of being cached.
+* (-) HTML markup, CSS style and JavaScript script are all kept in the same file.
 * (-) No security measures, Monitor manages Agents by processing GET variables.
 * (?) The same Agent could be added more than once.
 
-# Packages [^](#contents)
+# Files [^](#contents)
 ## Agent [^](#contents)
 This is the main class of the Agent application. It takes the following parameters:
 * `initial clock` — value of the clock the Agent should begin counting from,
@@ -85,11 +90,11 @@ This is the main class of the Agent application. It takes the following paramete
 Agent contains an array of `AgentData`s, which holds appropriate information to contact other Agents.
 
 Furthermore, Agent receives and processes the following messages:
-* `CLK` — Send Agent's clock in ms to the requestor.
+* `CLK` — Send Agent's clock in milliseconds to the requestor.
 * `NET` — Build and send a list of all Agents registered to the requestor. The list is built as `addr1:port1;addr2:port2;...;addrN:portN`.
 * `SYN` — Download clocks of all registered Agents and set its clock to average of all, including its. Responds with nothing.
 * `END` — Shutdown the Agent. Responds with nothing.
-* `default` — In case a message is not recognized, it is assumed to contain the address of an Agent. If the address is not on the receiver's list, it is added to it. Otherwise, the address is removed from the list (used when a remote Agent shuts down).
+* `default` — In case a message is not recognized, it is assumed to contain the port of an Agent. The full address is then constructed by getting the Socket's remote host address. If the address is not on the receiver's list, it is added to it. Otherwise, the address is removed from the list (used when a remote Agent shuts down).
 
 ## AgentData [^](#contents)
 This class stores the following information:
@@ -99,7 +104,7 @@ This class stores the following information:
 * `TCPClient client` — instance of the `TCPClient` class to allow communication.
 
 ## Monitor [^](#contents)
-The Monitor class sets up an HTTP server on `localhost:<port>` (Default port 3000). It is keeping a list of its own of all the Agents. To manage them, it processes GET parameters it reads from the URI, sent by client-side script. `index.html` is the default file that's being sent when the parameters are not recognised, otherwise following occurs for the particular parameters:
+The Monitor class sets up an HTTP server on `localhost:<port>` (default port 3000). It is keeping a list of its own of all the Agents. To manage them, it processes GET parameters it reads from the URI, sent by client-side script. `index.html` is the default file that's being sent when the parameters are not recognised, otherwise following occurs for the particular parameters:
 * `table=1` — fetches latest clock counts and sents HTML table as a text file,
 * `synchronize=X` — sends `SYN` to Agent of the ID `X`,
 * `remove=X` — removes the Agent of the ID `X` from the list (doesn't shut it down),
