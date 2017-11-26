@@ -26,6 +26,7 @@ public class Agent{
 		data = new ArrayList<AgentData>();
 
 		initCounterThread();
+		createTcpServer();
 
 		if(args.length > 3)
 			setupSubAgent(args[2], Integer.parseInt(args[3]));
