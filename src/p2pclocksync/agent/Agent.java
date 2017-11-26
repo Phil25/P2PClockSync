@@ -26,6 +26,7 @@ public class Agent{
 		data = new ArrayList<AgentData>();
 
 		initCounterThread();
+		captureShutdown();
 		createTcpServer();
 
 		if(args.length > 3)
@@ -33,7 +34,7 @@ public class Agent{
 
 		handleUserCommands(); // blocks thread
 
-		shutdown();
+		System.exit(0);
 	}
 
 	private static void initCounterThread(){
@@ -43,6 +44,16 @@ public class Agent{
 				sleep(1);
 			}
 		}).start();
+	}
+
+	private static void captureShutdown(){
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			String thisPort = "" + thisData.port;
+			for(int i = 0; i < data.size(); i++){
+				data.get(i).send(thisPort);
+				data.get(i).send("SYN");
+			}
+		}));
 	}
 
 	private static void createTcpServer(){
@@ -110,7 +121,7 @@ public class Agent{
 				break;
 
 			case "END": // end process
-				shutdown();
+				System.exit(0);
 				break;
 
 			default:	// port to be set
@@ -177,15 +188,6 @@ public class Agent{
 		try{
 			Thread.sleep(x);
 		}catch(InterruptedException e){}
-	}
-
-	private static void shutdown(){
-		String thisPort = "" + thisData.port;
-		for(int i = 0; i < data.size(); i++){
-			data.get(i).send(thisPort);
-			data.get(i).send("SYN");
-		}
-		System.exit(0);
 	}
 
 }

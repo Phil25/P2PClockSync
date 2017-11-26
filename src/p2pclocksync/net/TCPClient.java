@@ -56,9 +56,7 @@ public class TCPClient implements Closeable{
 		String result = null;
 		try{
 			result = in.readLine();
-		}catch(IOException e){
-			result = e.getCause().toString();
-		}
+		}catch(IOException e){}
 		if(result == null){
 			valid = false;
 			retryLoop();

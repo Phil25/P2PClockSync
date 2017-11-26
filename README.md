@@ -61,7 +61,7 @@ What has or hasn't been implemented, plus potential bugs.
 * (+) Every Agent keeps the list of the structure of the network, updated  dynamically.
 * (+) Agents' clocks are synchronized every time an Agent leaves or joins the network.
 * (+) Simple command processor. Type "exit" or "quit" to close the Agent.
-* (-) Due to Windows' improper shutdown detection, to manually close an Agent (outside of Monitor) one must do so with "exit" or "quit" commands, rather than system signaling.
+* (+) Agent captures shutdown event to broadcast its shutdown and a `SYN` message.
 * (-) Shutdown of a remote Agent can be detected, but it is done this way to preserve the abstraction of `TCPServer`.
 * (-) Clock synchronization doesn't account for latency.
 * (-) No security measures, Agents accept connection or messages from anything.
