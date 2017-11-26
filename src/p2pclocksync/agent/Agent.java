@@ -26,8 +26,6 @@ public class Agent{
 		data = new ArrayList<AgentData>();
 
 		initCounterThread();
-		captureShutdown();
-		createTcpServer();
 
 		if(args.length > 3)
 			setupSubAgent(args[2], Integer.parseInt(args[3]));
@@ -44,10 +42,6 @@ public class Agent{
 				sleep(1);
 			}
 		}).start();
-	}
-
-	private static void captureShutdown(){
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
 	}
 
 	private static void createTcpServer(){
