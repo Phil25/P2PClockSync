@@ -90,9 +90,6 @@ public class UDPClient{
 				.filter(Objects::nonNull)
 				.forEach(list::add);
 		}
-		System.out.println("Broadcast addresses:");
-		for(InetAddress addr : list)
-			System.out.println(addr.getHostAddress());
 		return list;
 	}
 

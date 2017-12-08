@@ -12,7 +12,6 @@ public class UDPServer extends Thread{
 	private DatagramSocket sock;
 	private BiFunction<String, String, String> func;
 	private boolean running;
-	private byte[] buffer;
 
 	public UDPServer(int port, BiFunction<String, String, String> func){
 		try{
@@ -20,7 +19,6 @@ public class UDPServer extends Thread{
 		}catch(SocketException e){
 			return;
 		}
-		this.buffer = new byte[BUFLEN];
 		this.func = func;
 		this.running = true;
 		this.start();
@@ -28,6 +26,7 @@ public class UDPServer extends Thread{
 
 	public void run(){
 		DatagramPacket packet = null;
+		byte[] buffer = new byte[BUFLEN];
 		while(running){
 			packet = new DatagramPacket(buffer, BUFLEN);
 			try{
@@ -48,7 +47,7 @@ public class UDPServer extends Thread{
 	private void reply(DatagramPacket packet, String message){
 		if(message == null)
 			return;
-		buffer = message.getBytes();
+		byte[] buffer = message.getBytes();
 		try{
 			sock.send(new DatagramPacket(buffer, buffer.length, packet.getAddress(), packet.getPort()));
 		}catch(IOException e){
