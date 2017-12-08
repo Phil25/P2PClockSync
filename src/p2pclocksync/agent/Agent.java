@@ -49,7 +49,6 @@ public class Agent{
 			while(true){
 				syncCounters();
 				UDPClient.broadcast("get counter");
-				System.out.println("Synchronizing...");
 				sleep(period);
 			}
 		}).start();
@@ -122,7 +121,9 @@ public class Agent{
 		for(ClockData otherClock : clocks)
 			sum += otherClock.getClock();
 		sum += clock;
+		System.out.print(clock + "ms -> ");
 		clock = sum /(clocks.size() +1);
+		System.out.print(clock + "ms.\n");
 	}
 
 	private static void sleep(long x){
