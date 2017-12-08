@@ -12,7 +12,7 @@ public class UDPServer extends Thread{
 	private DatagramSocket sock;
 	private BiFunction<String, String, String> func;
 	private boolean running;
-	private byte[] buffer = new byte[BUFLEN];
+	private byte[] buffer;
 
 	public UDPServer(int port, BiFunction<String, String, String> func){
 		try{
@@ -20,6 +20,7 @@ public class UDPServer extends Thread{
 		}catch(SocketException e){
 			return;
 		}
+		this.buffer = new byte[BUFLEN];
 		this.func = func;
 		this.running = true;
 		this.start();
