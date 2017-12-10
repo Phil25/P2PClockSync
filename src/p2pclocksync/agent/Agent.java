@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import p2pclocksync.data.ClockData;
+import p2pclocksync.data.NetData;
 import p2pclocksync.net.UDPClient;
 import p2pclocksync.net.UDPServer;
 
@@ -55,10 +56,7 @@ public class Agent{
 	}
 
 	private static String processMessage(String ip, String msg){
-		System.out.println("Received: " + msg + " from " + ip);
-		String sending = msg == null ? null : processParams(ip, msg.split(" "));
-		System.out.println("Sending: " + sending); 
-		return sending;
+		return msg == null ? null : processParams(ip, msg.split(" "));
 	}
 
 	private static String processParams(String ip, String[] params){
@@ -72,13 +70,13 @@ public class Agent{
 
 	private static String processGet(String[] params){
 		if(params.length < 2)
-			return null;
+			return "invalid get parameters";
 		return params[1].equalsIgnoreCase("counter") ? getClock() : getPeriod();
 	}
 
 	private static String processSet(String[] params){
 		if(params.length < 3)
-			return null;
+			return "invalid set parameters";
 		return params[1].equals("counter") ? setClock(params[2]) : setPeriod(params[2]);
 	}
 
@@ -100,6 +98,10 @@ public class Agent{
 	}
 
 	private static void setClockFor(String ip, String newClock){
+		if(NetData.getInternalIps().contains(ip)){
+			System.out.println(ip + " found in list, ignoring..");
+			return;
+		}
 		long otherClock = -1;
 		try{
 			otherClock = Long.parseLong(newClock);

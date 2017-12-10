@@ -12,8 +12,10 @@ public class UDPServer extends Thread{
 	private DatagramSocket sock;
 	private BiFunction<String, String, String> func;
 	private boolean running;
+	private int port;
 
 	public UDPServer(int port, BiFunction<String, String, String> func){
+		this.port = port;
 		try{
 			this.sock = new DatagramSocket(port);
 		}catch(SocketException e){
@@ -40,16 +42,16 @@ public class UDPServer extends Thread{
 	}
 
 	private String getResponse(DatagramPacket packet){
-		String response = new String(packet.getData(), 0, packet.getLength());
-		return func.apply(packet.getAddress().getHostAddress(), response);
+		String incoming = new String(packet.getData(), 0, packet.getLength());
+		return func.apply(packet.getAddress().getHostAddress(), incoming);
 	}
 
-	private void reply(DatagramPacket packet, String message){
-		if(message == null)
+	private void reply(DatagramPacket packet, String response){
+		if(response == null)
 			return;
-		byte[] buffer = message.getBytes();
+		byte[] buffer = response.getBytes();
 		try{
-			sock.send(new DatagramPacket(buffer, buffer.length, packet.getAddress(), packet.getPort()));
+			sock.send(new DatagramPacket(buffer, buffer.length, packet.getAddress(), port));
 		}catch(IOException e){
 			e.printStackTrace();
 		}
