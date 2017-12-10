@@ -26,7 +26,7 @@ public class Agent{
 		UDPClient.setPort(PORT);
 		initCounterThread(Integer.parseInt(args[0]));
 		createUdpServer();
-		initSyncThread(Integer.parseInt(args[1]) *1000);
+		initSyncThread(Double.parseDouble(args[1]) *1000);
 	}
 
 	private static void initCounterThread(long initClock){
@@ -44,8 +44,8 @@ public class Agent{
 		System.out.println("Server on port " + PORT + " initialized!");
 	}
 
-	private static void initSyncThread(long initPeriod){
-		period = initPeriod;
+	private static void initSyncThread(double initPeriod){
+		period = (long)initPeriod;
 		new Thread(() -> {
 			while(true){
 				syncCounters();
