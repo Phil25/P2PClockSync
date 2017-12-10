@@ -14,7 +14,6 @@ public class UDPClient{
 
 	private static DatagramSocket sock = null;
 	private static InetAddress address = null;
-	private static byte[] buffer = new byte[BUFLEN];
 	private static int port = 22222;
 	private static List<InetAddress> broadcasts = null;
 
@@ -37,7 +36,7 @@ public class UDPClient{
 		}catch(SocketException e){
 			return;
 		}
-		buffer = message.getBytes();
+		byte[] buffer = message.getBytes();
 		try{
 			for(InetAddress address : broadcasts)
 				sock.send(new DatagramPacket(buffer, buffer.length, address, port));
@@ -46,28 +45,33 @@ public class UDPClient{
 
 	public static String send(String ip, String message){
 		try{
+			return send(InetAddress.getByName(ip), message);
+		}catch(UnknownHostException e){
+			return null;
+		}
+	}
+
+	public static String send(InetAddress address, String message){
+		try{
 			sock.setBroadcast(false);
 		}catch(SocketException e){
 			return null;
 		}
 		try{
-			sock.send(buildPacket(ip, message));
+			sock.send(buildPacket(address, message));
 		}catch(IOException e){
 			return null;
 		}
 		return getResponse();
 	}
 
-	private static DatagramPacket buildPacket(String ip, String message){
-		buffer = message.getBytes();
-		try{
-			return new DatagramPacket(buffer, buffer.length, InetAddress.getByName(ip), port);
-		}catch(UnknownHostException e){
-			return null;
-		}
+	private static DatagramPacket buildPacket(InetAddress address, String message){
+		byte[] buffer = message.getBytes();
+		return new DatagramPacket(buffer, buffer.length, address, port);
 	}
 
 	private static String getResponse(){
+		byte[] buffer = new byte[BUFLEN];
 		DatagramPacket packet = new DatagramPacket(buffer, BUFLEN);
 		try{
 			sock.receive(packet);

@@ -55,7 +55,10 @@ public class Agent{
 	}
 
 	private static String processMessage(String ip, String msg){
-		return msg == null ? null : processParams(ip, msg.split(" "));
+		System.out.println("Received: " + msg + " from " + ip);
+		String sending = msg == null ? null : processParams(ip, msg.split(" "));
+		System.out.println("Sending: " + sending); 
+		return sending;
 	}
 
 	private static String processParams(String ip, String[] params){
@@ -84,7 +87,7 @@ public class Agent{
 	}
 
 	private static String getPeriod(){
-		return "" + (period *1000);
+		return "" + (period /1000);
 	}
 
 	private static String setClock(String newClock){
