@@ -80,6 +80,19 @@ public class Agent{
 		return params[1].equals("counter") ? setClock(params[2]) : setPeriod(params[2]);
 	}
 
+	private static String getClock(boolean format){
+		if(!format)
+			return getClock();
+		long t = clock;
+		long ms = t %1000;
+		t = (t -ms) /1000;
+		long sec = t %60;
+		t = (t -sec) /60;
+		long min = t %60;
+		long h = (t -min) /60;
+		return String.format("%02d:%02d:%02d.%03d", h, min, sec, ms);
+	}
+
 	private static String getClock(){
 		return "" + clock;
 	}
@@ -98,10 +111,8 @@ public class Agent{
 	}
 
 	private static void setClockFor(String ip, String newClock){
-		if(NetData.getInternalIps().contains(ip)){
-			System.out.println(ip + " found in list, ignoring..");
+		if(NetData.getInternalIps().contains(ip))
 			return;
-		}
 		long otherClock = -1;
 		try{
 			otherClock = Long.parseLong(newClock);
@@ -126,9 +137,9 @@ public class Agent{
 		for(ClockData otherClock : clocks)
 			sum += otherClock.getClock();
 		sum += clock;
-		System.out.print(clock + "ms -> ");
+		System.out.print(getClock(true) + "ms -> ");
 		clock = sum /(clocks.size() +1);
-		System.out.print(clock + "ms.\n");
+		System.out.print(getClock(true) + "ms.\n");
 	}
 
 	private static void sleep(long x){
