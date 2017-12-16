@@ -1,49 +1,45 @@
 package p2pclocksync.net;
 
 import java.io.IOException;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import java.net.*;
 
 public class UDPServer extends Thread{
 
-	private static final int BUFLEN = 255;
+	private static final int LEN = 255;
 
-	private DatagramSocket sock;
-	private BiFunction<String, String, String> func;
 	private boolean running;
 	private int port;
+	private Function<String, String> func;
+	private DatagramSocket socket;
 
-	public UDPServer(int port, BiFunction<String, String, String> func){
+	public UDPServer(int port, Function<String, String> func){
+		running = true;
 		this.port = port;
-		try{
-			this.sock = new DatagramSocket(port);
-		}catch(SocketException e){
-			return;
-		}
 		this.func = func;
-		this.running = true;
-		this.start();
+		try{
+			socket = new DatagramSocket(port);
+			this.start();
+		}catch(SocketException e){
+			e.printStackTrace();
+		}
 	}
 
 	public void run(){
 		DatagramPacket packet = null;
-		byte[] buffer = new byte[BUFLEN];
+		byte[] buffer = new byte[LEN];
 		while(running){
-			packet = new DatagramPacket(buffer, BUFLEN);
+			packet = new DatagramPacket(buffer, LEN);
 			try{
-				sock.receive(packet);
+				socket.receive(packet);
 			}catch(IOException e){
-				packet.setData("Receive error.".getBytes());
+				packet.setData("receive error".getBytes());
 			}
-			reply(packet, getResponse(packet));
+			String response = func.apply(new String(buffer, 0, packet.getLength()));
+			reply(packet, response);
 		}
-		sock.close();
-	}
-
-	private String getResponse(DatagramPacket packet){
-		String incoming = new String(packet.getData(), 0, packet.getLength());
-		return func.apply(packet.getAddress().getHostAddress(), incoming);
+		socket.close();
 	}
 
 	private void reply(DatagramPacket packet, String response){
@@ -51,7 +47,9 @@ public class UDPServer extends Thread{
 			return;
 		byte[] buffer = response.getBytes();
 		try{
-			sock.send(new DatagramPacket(buffer, buffer.length, packet.getAddress(), port));
+			InetAddress address = packet.getAddress();
+			int port = packet.getPort();
+			socket.send(new DatagramPacket(buffer, buffer.length, address, port));
 		}catch(IOException e){
 			e.printStackTrace();
 		}
@@ -63,7 +61,7 @@ public class UDPServer extends Thread{
 
 	@Override
 	public String toString(){
-		return sock.toString();
+		return socket.toString();
 	}
 
 }

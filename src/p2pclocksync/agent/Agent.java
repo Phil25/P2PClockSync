@@ -1,89 +1,134 @@
 package p2pclocksync.agent;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-import p2pclocksync.data.ClockData;
-import p2pclocksync.data.NetData;
+import p2pclocksync.data.CounterData;
 import p2pclocksync.net.UDPClient;
 import p2pclocksync.net.UDPServer;
 
 public class Agent{
 
-	private static final int PORT = 22222;
+	private static int PORT = 22222;
 
-	private static long clock, period;
-	private static Map<String, ClockData> otherClocks;
+	private static long initCounter, initPeriod;
+	private static InetAddress broadcast;
+
+	public UDPClient client;
+	public long counter, period;
+	public Map<Integer, CounterData> counters;
+	public List<Integer> locals;
 
 	public static void main(String[] args){
-		if(args.length < 2){
-			System.err.println("Please specify initial clock value and sync interval as arguments.");
+		if(!processArgs(args)){
+			System.err.println("Please specify counter, period and broadcast address as arguments.");
 			return;
 		}
-
-		otherClocks = new HashMap<String, ClockData>();
-		UDPClient.setPort(PORT);
-		initCounterThread(Integer.parseInt(args[0]));
-		createUdpServer();
-		initSyncThread(Double.parseDouble(args[1]) *1000);
-	}
-
-	private static void initCounterThread(long initClock){
-		clock = initClock;
-		new Thread(() -> {
-			while(true){
-				clock++;
-				sleep(1);
-			}
-		}).start();
-	}
-
-	private static void createUdpServer(){
-		UDPServer server = new UDPServer(PORT, (ip, msg) -> processMessage(ip, msg));
-		System.out.println("Server on port " + PORT + " initialized!");
-	}
-
-	private static void initSyncThread(double initPeriod){
-		period = (long)initPeriod;
-		new Thread(() -> {
-			while(true){
-				syncCounters();
-				UDPClient.broadcast("get counter");
-				sleep(period);
-			}
-		}).start();
-	}
-
-	private static String processMessage(String ip, String msg){
-		return msg == null ? null : processParams(ip, msg.split(" "));
-	}
-
-	private static String processParams(String ip, String[] params){
-		switch(params[0]){
-			case "get": return processGet(params);
-			case "set": return processSet(params);
-			default: setClockFor(ip, params[0]); // from broadcast
+		try{
+			Agent agent = new Agent(initCounter, initPeriod);
+		}catch(SocketException e){
+			e.printStackTrace();
 		}
-		return null;
 	}
 
-	private static String processGet(String[] params){
-		if(params.length < 2)
-			return "invalid get parameters";
-		return params[1].equalsIgnoreCase("counter") ? getClock() : getPeriod();
+	public Agent(long counter, long period) throws SocketException{
+		this.counter = counter;
+		this.period = period;
+		this.counters = new HashMap<Integer, CounterData>();
+		this.locals = getLocalAddresses();
+		initCounter();
+		initPeriod();
+		initServer();
+		initClient();
 	}
 
-	private static String processSet(String[] params){
-		if(params.length < 3)
-			return "invalid set parameters";
-		return params[1].equals("counter") ? setClock(params[2]) : setPeriod(params[2]);
+	private static boolean processArgs(String[] args){
+		if(args.length < 3)
+			return false;
+		try{
+			initCounter = Long.parseLong(args[0]);
+			if((initPeriod = Long.parseLong(args[1]) *1000) == 0)
+				throw new Exception();
+			broadcast = InetAddress.getByName(args[2]);
+		}catch(Exception e){
+			return false;
+		}
+		return true;
 	}
 
-	private static String getClock(boolean format){
-		if(!format)
-			return getClock();
-		long t = clock;
+	private void initCounter(){
+		new Thread(() -> {
+			while(true){
+				sleep(1);
+				counter++;
+			}
+		}).start();
+	}
+
+	private void initPeriod(){
+		new Thread(() -> {
+			while(true){
+				sleep(period);
+				sync();
+			}
+		}).start();
+	}
+
+	private void initServer(){
+		MessageProcessor mp = new MessageProcessor(this);
+		UDPServer server = new UDPServer(PORT, msg -> mp.process(msg));
+		System.out.println("Server running on port " + PORT + ".");
+	}
+
+	private void initClient(){
+		try{
+			client = new UDPClient(PORT, Agent.broadcast);
+		}catch(Exception e){
+			client = null;
+		}
+	}
+
+	private void sync(){
+		if(client == null)
+			return;
+		averageCurrent();
+		client.broadcast("get counter", (addr, msg) -> processCounters(addr, msg), period);
+	}
+
+	private void averageCurrent(){
+		Collection<CounterData> counters = this.counters.values();
+		long sum = 0;
+		for(CounterData counter : counters)
+			sum += counter.getCounter();
+		sum += this.counter;
+		System.out.print(getCounter() + "ms -> ");
+		this.counter = sum/(counters.size() +1);
+		System.out.println(getCounter() + "ms");
+	}
+
+	private void processCounters(InetAddress address, String message){
+		int hash = addressToInt(address);
+		if(locals.contains(hash))
+			return;
+		System.out.println(address.getHostAddress() + ": " + message);
+		try{
+			long counter = Long.parseLong(message);
+			counters.put(hash, new CounterData(counter));
+		}catch(NumberFormatException e){
+			System.err.println("Error reading counter from " + address.getHostAddress());
+		}
+	}
+
+	private String getCounter(){
+		long t = counter;
 		long ms = t %1000;
 		t = (t -ms) /1000;
 		long sec = t %60;
@@ -93,59 +138,41 @@ public class Agent{
 		return String.format("%02d:%02d:%02d.%03d", h, min, sec, ms);
 	}
 
-	private static String getClock(){
-		return "" + clock;
-	}
-
-	private static String getPeriod(){
-		return "" + (period /1000);
-	}
-
-	private static String setClock(String newClock){
-		try{
-			clock = Long.parseLong(newClock);
-		}catch(NumberFormatException e){
-			return "invalid clock: " + newClock;
-		}
-		return "clock set";
-	}
-
-	private static void setClockFor(String ip, String newClock){
-		if(NetData.getInternalIps().contains(ip))
-			return;
-		long otherClock = -1;
-		try{
-			otherClock = Long.parseLong(newClock);
-		}catch(NumberFormatException e){
-			return;
-		}
-		otherClocks.put(ip, new ClockData(otherClock));
-	}
-
-	private static String setPeriod(String newPeriod){
-		try{
-			period = Long.parseLong(newPeriod) *1000;
-		}catch(NumberFormatException e){
-			return "invalid period: " + newPeriod;
-		}
-		return "period set";
-	}
-
-	private static void syncCounters(){
-		Collection<ClockData> clocks = otherClocks.values();
-		int sum = 0;
-		for(ClockData otherClock : clocks)
-			sum += otherClock.getClock();
-		sum += clock;
-		System.out.print(getClock(true) + "ms -> ");
-		clock = sum /(clocks.size() +1);
-		System.out.print(getClock(true) + "ms.\n");
-	}
-
-	private static void sleep(long x){
+	private void sleep(long x){
 		try{
 			Thread.sleep(x);
 		}catch(InterruptedException e){}
+	}
+
+	private List<Integer> getLocalAddresses() throws SocketException{
+		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+		List<Integer> list = new ArrayList<Integer>();
+		NetworkInterface i = null;
+		while(interfaces.hasMoreElements() && isValidInterface((i = interfaces.nextElement()))){
+			i.getInterfaceAddresses()
+				.stream()
+				.map(a -> a.getAddress())
+				.filter(Objects::nonNull)
+				.map(a -> addressToInt(a))
+				.forEach(list::add);
+		}
+		return list;
+	}
+
+	private static boolean isValidInterface(NetworkInterface i){
+		try{
+			return i == null ? false : !i.isLoopback() && i.isUp();
+		}catch(SocketException e){
+			return false;
+		}
+	}
+
+	private int addressToInt(InetAddress address){
+		int result = 0;
+		byte[] bytes = address.getAddress();
+		for(int i = 0; i < bytes.length; i++)
+			result |= ((bytes[i] & 0xFF) << (8 *i));
+		return result;
 	}
 
 }

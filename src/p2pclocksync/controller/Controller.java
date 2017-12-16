@@ -11,6 +11,7 @@ public class Controller{
 	private static InetAddress address;
 	private static Scanner sc;
 	private static String cmd, other;
+	private static UDPClient client;
 
 	public static void main(String[] args){
 		if(args.length > 0){
@@ -20,6 +21,12 @@ public class Controller{
 				System.err.println("Unknown host; exiting...");
 				System.exit(1);
 			}
+		}
+		try{
+			client = new UDPClient(22222);
+		}catch(Exception e){
+			System.err.println("Unable to create UDP client.");
+			System.exit(1);
 		}
 		System.out.println("Controlling: " + address.getHostAddress());
 		cmd = argsToLine(args);
@@ -57,7 +64,7 @@ public class Controller{
 			return true;
 		if(cmd.equalsIgnoreCase("exit") || cmd.equalsIgnoreCase("quit"))
 			return false;
-		String reply = UDPClient.send(address, cmd);
+		String reply = client.send(address, cmd);
 		if(reply != null)
 			System.out.println(other + ": " + reply);
 		return true;

@@ -1,7 +1,0 @@
-package p2pclocksync.data;
-
-public class NetData{
-
-	private NetData()[]
-
-}
