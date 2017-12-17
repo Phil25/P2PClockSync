@@ -36,6 +36,7 @@ public class UDPServer extends Thread{
 			}catch(IOException e){
 				packet.setData("receive error".getBytes());
 			}
+			System.out.println("Received from " + packet.getAddress().getHostAddress());
 			String response = func.apply(packet.getAddress(), new String(buffer, 0, packet.getLength()));
 			if(response != null)
 				reply(packet, response);
@@ -44,8 +45,6 @@ public class UDPServer extends Thread{
 	}
 
 	private void reply(DatagramPacket packet, String response){
-		if(response == null)
-			return;
 		byte[] buffer = response.getBytes();
 		try{
 			InetAddress address = packet.getAddress();
