@@ -10,13 +10,13 @@ public class Controller{
 
 	private static InetAddress address;
 	private static Scanner sc;
-	private static String cmd, other;
+	private static String cmd, labelThis = "Command", labelOther;
 	private static UDPClient client;
 
 	public static void main(String[] args){
 		if(args.length > 0){
-			other = args[0];
-			address = getAddress(other);
+			labelOther = args[0];
+			address = getAddress(labelOther);
 			if(address == null){
 				System.err.println("Unknown host; exiting...");
 				System.exit(1);
@@ -29,6 +29,9 @@ public class Controller{
 			System.exit(1);
 		}
 		System.out.println("Controlling: " + address.getHostAddress());
+		int len = max(labelThis.length(), labelOther.length());
+		labelOther = String.format("%-" + len + "s : ", labelOther);
+		labelThis = String.format("%-" + len + "s : ", labelThis);
 		cmd = argsToLine(args);
 		execute();
 		sc = new Scanner(System.in);
@@ -54,7 +57,7 @@ public class Controller{
 	}
 
 	private static boolean getLine(){
-		System.out.print("Command: ");
+		System.out.print(labelThis);
 		cmd = sc.nextLine();
 		return cmd != null;
 	}
@@ -66,8 +69,12 @@ public class Controller{
 			return false;
 		String reply = client.send(address, cmd);
 		if(reply != null)
-			System.out.println(other + ": " + reply);
+			System.out.println(labelOther + reply);
 		return true;
+	}
+
+	private static int max(int n1, int n2){
+		return n1 > n2 ? n1 : n2;
 	}
 
 }

@@ -70,6 +70,10 @@ public class UDPClient implements Closeable{
 		return receiveMessage();
 	}
 
+	public void broadcast(String message){
+		broadcast(message, null, 0);
+	}
+
 	public void broadcast(String message, BiConsumer<InetAddress, String> callback, long timeout){
 		if(broadcast == null)
 			return;

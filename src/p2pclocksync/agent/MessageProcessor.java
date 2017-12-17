@@ -1,5 +1,7 @@
 package p2pclocksync.agent;
 
+import java.net.InetAddress;
+
 public class MessageProcessor{
 
 	private Agent agent;
@@ -8,14 +10,15 @@ public class MessageProcessor{
 		this.agent = agent;
 	}
 
-	public String process(String message){
-		return message == null ? null : processMessage(message.toLowerCase().split(" "));
+	public String process(InetAddress address, String message){
+		return message == null ? null : processMessage(address, message.toLowerCase().split(" "));
 	}
 
-	private String processMessage(String[] args){
+	private String processMessage(InetAddress address, String[] args){
 		switch(args[0]){
 			case "get": return processGet(args);
 			case "set": return processSet(args);
+			case "shutdown": agent.onShutdown(address);
 		}
 		return null;
 	}
