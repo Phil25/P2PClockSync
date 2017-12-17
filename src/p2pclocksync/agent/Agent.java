@@ -25,16 +25,11 @@ public class Agent{
 			System.err.println("Please specify counter, period and broadcast address as arguments.");
 			return;
 		}
-		captureShutdown();
 		try{
 			agent = new Agent(initCounter, initPeriod);
 		}catch(SocketException e){
 			e.printStackTrace();
 		}
-	}
-
-	private static void captureShutdown(){
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> agent.client.broadcast("shutdown")));
 	}
 
 	public Agent(long counter, long period) throws SocketException{
@@ -82,7 +77,7 @@ public class Agent{
 
 	private void initServer(){
 		MessageProcessor mp = new MessageProcessor(this);
-		UDPServer server = new UDPServer(PORT, (addr, msg) -> mp.process(addr, msg));
+		UDPServer server = new UDPServer(PORT, msg -> mp.process(msg));
 		System.out.println("Server running on port " + PORT + ".");
 	}
 
@@ -98,6 +93,7 @@ public class Agent{
 		if(client == null)
 			return;
 		averageCurrent();
+		counters.clear();
 		client.broadcast("get counter", (addr, msg) -> processCounters(addr, msg), period);
 	}
 
@@ -116,19 +112,12 @@ public class Agent{
 		int hash = addressToInt(address);
 		if(locals.contains(hash))
 			return;
-		System.out.println(address.getHostAddress() + ": " + message);
 		try{
 			long counter = Long.parseLong(message);
 			counters.put(hash, new CounterData(counter));
 		}catch(NumberFormatException e){
 			System.err.println("Error reading counter from " + address.getHostAddress());
 		}
-	}
-
-	public void onShutdown(InetAddress address){
-		int hash = addressToInt(address);
-		System.out.println("removing: " + address.getHostAddress());
-		counters.remove(hash);
 	}
 
 	private String getCounter(){

@@ -1,7 +1,7 @@
 package p2pclocksync.net;
 
 import java.io.IOException;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import java.net.*;
 
@@ -11,10 +11,10 @@ public class UDPServer extends Thread{
 
 	private boolean running;
 	private int port;
-	private BiFunction<InetAddress, String, String> func;
+	private Function<String, String> func;
 	private DatagramSocket socket;
 
-	public UDPServer(int port, BiFunction<InetAddress, String, String> func){
+	public UDPServer(int port, Function<String, String> func){
 		running = true;
 		this.port = port;
 		this.func = func;
@@ -36,8 +36,7 @@ public class UDPServer extends Thread{
 			}catch(IOException e){
 				packet.setData("receive error".getBytes());
 			}
-			System.out.println("Received from " + packet.getAddress().getHostAddress());
-			String response = func.apply(packet.getAddress(), new String(buffer, 0, packet.getLength()));
+			String response = func.apply(new String(buffer, 0, packet.getLength()));
 			if(response != null)
 				reply(packet, response);
 		}
