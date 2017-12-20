@@ -110,8 +110,9 @@ public class Agent{
 
 	private void processCounters(InetAddress address, String message){
 		int hash = addressToInt(address);
-		if(locals.contains(hash))
+		if(locals.contains(hash)){
 			return;
+		}
 		try{
 			long counter = Long.parseLong(message);
 			counters.put(hash, new CounterData(counter));
@@ -141,7 +142,7 @@ public class Agent{
 		Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
 		List<Integer> list = new ArrayList<Integer>();
 		NetworkInterface i = null;
-		while(interfaces.hasMoreElements() && isValidInterface((i = interfaces.nextElement()))){
+		while(interfaces.hasMoreElements() && (i = interfaces.nextElement()) != null){
 			i.getInterfaceAddresses()
 				.stream()
 				.map(a -> a.getAddress())
@@ -150,14 +151,6 @@ public class Agent{
 				.forEach(list::add);
 		}
 		return list;
-	}
-
-	private static boolean isValidInterface(NetworkInterface i){
-		try{
-			return i == null ? false : !i.isLoopback() && i.isUp();
-		}catch(SocketException e){
-			return false;
-		}
 	}
 
 	private int addressToInt(InetAddress address){
