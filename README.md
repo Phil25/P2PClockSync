@@ -15,9 +15,9 @@
 		* [Agent](#agent-)
 		* [MessageProcessor](#messageprocessor-)
 	* p2pclocksync.data
-		* [AgentData](#agentdata-)
+		* [CounterData](#counterdata-)
 	* p2pclocksync.controller
-		* [Controller](#conroller-)
+		* [Controller](#controller-)
 	* p2pclocksync.net
 		* [UDPServer](#udpclient-)
 		* [UDPServer](#udpserver-)
@@ -69,7 +69,7 @@ What has or hasn't been implemented, plus potential bugs.
 * (+) Arguments are translated to a command and sent to the specified address.
 * (+) Response is properly received and displayed.
 * (+) Command processor runs in a loop in the application.
-* (-) Receive buffer might get stuffed in case a broadcast address is given. //TODO: check this
+* (-) Receive buffer might get stuffed in case a broadcast address is given.
 
 # Files [^](#contents)
 
