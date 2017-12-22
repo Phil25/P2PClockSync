@@ -62,11 +62,11 @@ What has or hasn't been implemented, plus potential bugs.
 * (+) Agent waits for an arbitrary number of responses and calculates its counter after a timeout of the same length as the period.
 * (+) Counter synchronization accounts for latency by calculating time difference using local time.
 * (-) Period change occurs after the next consecutive synchronization, this could be a long time in case the previous value is large.
-* (-) No security measures, Agents execute commands from any source.
+* (-) No security measures, Agents execute commands from any source, with no delay.
 
 ### Controller:
 
-* (+) Arguments are translated to a command and send to the specified address.
+* (+) Arguments are translated to a command and sent to the specified address.
 * (+) Response is properly received and displayed.
 * (+) Command processor runs in a loop in the application.
 * (-) Receive buffer might get stuffed in case a broadcast address is given. //TODO: check this
@@ -83,15 +83,20 @@ This is the main class of the Agent application. It takes the following paramete
 
 Furthermore, Agent receives and processes the following messages:
 
-* `get counter` -- returns Agent's counter.
-* `get period` -- returns Agent's period.
-* `set counter X` -- sets Agent's counter to _X_.
-* `set period X` -- sets Agent's period to _X_.
+* `get counter` — returns Agent's counter.
+* `get period` — returns Agent's period.
+* `set counter X` — sets Agent's counter to _X_.
+* `set period X` — sets Agent's period to _X_.
+
+## MessageProcessor [^](#contents)
+
+`MessageProcessor` seperates the Agent and processing incoming messages. It contains an object of Agent which allows it to return any data necessary.
 
 ## CounterData [^](#contents)
 
 Provides an abstraction of returning corrected time by adding the passed time from when the counter was saved.
-Example: `CounterData cd = new CounterData(1000); sleep(2000); print cd.getTime()` -- prints 3000.
+
+Example: `CounterData cd = new CounterData(1000); sleep(2000); print cd.getTime()` — prints 3000.
 
 ## Controller [^](#contents)
 
@@ -99,17 +104,17 @@ The Controller class is used to provide an interface for interacting with specif
 
 It takes the following parameters:
 
-* `address`\* -- the address of the agent.
-* `cmds...`\* -- the first command to be executed, not necessairly given in quotation marks.
+* `address`\* — the address of the agent.
+* `cmds...`\* — the first command to be executed, not necessairly given in quotation marks.
 
 If no arguments are specified the Controller will prompt the user to input the address.
 
-Any input will be sent to the Agent and response will be returned, provided the Agent can process it correctly (commands are as specified in the Agent's file description).
+Any input will be sent to the Agent and response will be returned, provided the Agent can process it correctly (commands are as specified in the Agent's class description).
 
 ## UDPClient [^](#contents)
 
-`UDPClient` provides an abstraction sending and broadcasting data accross the network.
+`UDPClient` provides an abstraction for sending and broadcasting data accross the network.
 
 ## UDPServer [^](#contents)
 
-`UDPServer` provides an abstraction to receiving requests on the specified port.
+`UDPServer` provides an abstraction for receiving requests on the specified port.
